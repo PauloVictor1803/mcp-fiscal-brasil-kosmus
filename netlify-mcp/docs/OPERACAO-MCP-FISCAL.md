@@ -213,6 +213,27 @@ são outro conceito. Não copiar o token real para esta documentação.
 ## 11. Confirmação operacional
 
 - Código e dados oficiais: reconstruídos e testados localmente.
-- Publicação Netlify: verificação em andamento.
-- Ativação e execução da rotina diária: verificação em andamento.
+- Publicação Netlify: concluída, com autenticação e consultas verificadas em produção em 23/10/2026.
+- Rotina diária: instalada no ramo principal; primeira execução falhou por timeout de conexão ao CONFAZ. Duas tentativas falharam pelo mesmo timeout; a base anterior foi preservada. A programação está ativa, mas a obtenção diária de novas fontes ainda não foi comprovada.
 - Tina: não alterada.
+
+## 12. Créditos e custos de operação
+
+O atualizador não usa modelos de IA. Seu processamento ocorre no GitHub Actions.
+Não há deploy diário na Netlify: a função busca o JSON validado com cache de uma hora.
+Consultas usam requisições, processamento e tráfego da franquia Netlify.
+O AUTH_TOKEN é uma senha, não um saldo de créditos.
+
+No plano gratuito com créditos, o saldo mensal renova no início do ciclo de faturamento;
+créditos mensais restantes não acumulam. Conferir a data em Uso e faturamento > Saldo de créditos.
+Referência: https://docs.netlify.com/manage/accounts-and-billing/billing/billing-for-credit-based-plans/billing-faq-for-credit-based-plans/
+
+Limitação herdada: a auditoria de dependências do projeto Python original aponta vulnerabilidades no uv.lock.
+Esse projeto não é instalado pelo MCP Netlify. Os testes MCP, CI e CodeQL da versão final passaram.
+
+Verificações finais:
+
+- PR integrado: https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/pull/1
+- Execução automática e diagnóstico de rede: https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40009121713
+- Commit integrado: e84ed718c9a349526e16b2820bb2f688c505028e
+- Próxima ação de manutenção: resolver o acesso HTTPS do executor ao CONFAZ e repetir a execução até validar download, reconstrução, testes e gravação. Não alterar fontes nem desativar validações para mascarar falhas.
