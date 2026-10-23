@@ -66,6 +66,16 @@ test('busca CEST rejeita entradas ambiguas e limita candidatos e contexto',()=>{
   assert.ok(r.candidatos.every(c=>data.CEST[c.cest.replaceAll('.','')].status==='ativo'));
  }
 });
+test('aproximacao tolera erros sem converter codigos ou ignorar qualificadores',()=>{
+ for(const descricao of ['xampuu','xmapu','condiconador']){
+  const r=callTool('consultar_cest',{descricao});assert.ok(r.total>0,descricao);
+  assert.equal(r.candidatos[0].correspondencia,'aproximada');assert.ok(Buffer.byteLength(JSON.stringify(r))<3000);
+ }
+ assert.equal(callTool('consultar_cest',{descricao:'ouro'}).total,0); // Não confundir ouro com couro.
+ assert.equal(callTool('consultar_cest',{descricao:'xampu veterinario'}).total,0);
+ assert.ok(callTool('consultar_cest',{descricao:'cerveja sem alcool'}).candidatos.every(r=>/sem álcool/i.test(r.descricao)));
+ assert.equal(callTool('consultar_cest',{ncm:'33051001'}).total,0); // NCM não recebe aproximação.
+});
 test('HTTP e autenticacao',async()=>{
  assert.equal((await handler(new Request('http://localhost/mcp',{method:'POST',headers,body:'{'}))).status,400);
  assert.equal((await handler(req({x:'x'.repeat(9000)}))).status,413);

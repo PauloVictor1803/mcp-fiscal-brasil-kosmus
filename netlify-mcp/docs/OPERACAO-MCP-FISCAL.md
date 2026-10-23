@@ -281,6 +281,13 @@ Exemplos de argumentos:
 - ncm: 33051000
 - descricao: xampu; ncm: 33051000; modalidade_venda: outras
 
-Validação: oito testes passaram, incluindo compatibilidade com consulta por código, aliases de xampu, ambiguidades de segmento, NCM parcial, filtros combinados, ausência de correspondência, parâmetros inválidos e limites de contexto.
+Validação: nove testes passaram, incluindo compatibilidade com consulta por código, aliases de xampu, ambiguidades de segmento, NCM parcial, filtros combinados, ausência de correspondência, parâmetros inválidos e limites de contexto.
 Os nomes das quatro ferramentas permanecem iguais. Não é necessário acrescentar nome ao filtro fiscal_ats. Conferir a nova descrição no botão Testar conexão da Tina antes de testar no atendimento. Nenhum prompt, segredo ou configuração da Tina foi alterado por esta implementação.
 CFOP e CST/CSOSN continuam em consulta por código; recomendação contextual dessas operações ainda não foi implementada.
+
+### Busca por aproximação
+
+Além de acentos, sinônimos e plurais, a busca aceita erros de digitação e transposição de letras. A comparação aproximada só é aplicada a palavras com pelo menos cinco letras, com até uma edição (duas em termos com sete ou mais letras). Não aproxima NCM nem CEST e não descarta qualificadores como sem/com.
+São preservados somente os resultados com a melhor distância encontrada. O retorno identifica correspondencia como termos ou aproximada, mantém a descrição oficial e as condições a confirmar. Limite: três candidatos e resultados abaixo de 3 KB nos testes.
+Exemplos verificados: xampuu e xmapu encontram xampus; condiconador encontra condicionadores. A busca de sabonete usa a expressão sabão de toucador para evitar misturar produtos para lavar roupa.
+Isso é recuperação lexical de candidatos, não um classificador semântico completo nem certificação de aplicação fiscal.
