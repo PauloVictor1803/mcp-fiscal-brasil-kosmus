@@ -5,7 +5,7 @@ const schema = (properties, required) => ({ type: 'object', properties, required
 const code = (description, pattern) => ({ type: 'string', description, pattern, maxLength: 80 });
 const annotations = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 
-export const tools = [
+const declaredTools = [
   { name: 'consultar_cfop', description: 'Consulta a descrição de um CFOP informado; não escolhe o enquadramento.',
     inputSchema: schema({ cfop: code('Código de 4 dígitos; aceita 5.102.', '^\\s*[123567]\\.?[0-9]{3}\\s*$') }, ['cfop']), annotations },
   { name: 'validar_chave_nfe', description: 'Confere formato e dígito da chave NF-e/NFC-e; não consulta autorização.',
@@ -16,6 +16,11 @@ export const tools = [
   { name: 'consultar_cest', description: 'Consulta um CEST na amostra local; ausência não comprova código inválido.',
     inputSchema: schema({ cest: code('7 dígitos; aceita 01.007.00.', '^\\s*[0-9]{2}\\.?[0-9]{3}\\.?[0-9]{2}\\s*$') }, ['cest']), annotations },
 ];
+
+// Falha fechada: revisão técnica do transporte não aprova conteúdo fiscal.
+// Não anuncia tabelas reprovadas ao agente, para evitar chamadas inúteis.
+export const tools = declaredTools.filter(tool => tool.name === 'validar_chave_nfe'
+  || data.metadata.validacao === 'aprovada');
 
 export function validateArguments(tool, args) {
   if (!args || typeof args !== 'object' || Array.isArray(args)) throw new Error('Informe os parâmetros da ferramenta.');

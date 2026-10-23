@@ -2022,17 +2022,6 @@
     ]
   },
   "CST_ICMS_NORMAL": {
-    "000": "Nacional - Tributada integralmente",
-    "010": "Nacional - Tributada e com cobrança do ICMS por substituição tributária",
-    "020": "Nacional - Com redução de base de cálculo",
-    "030": "Nacional - Isenta ou não tributada e com cobrança do ICMS por substituição tributária",
-    "040": "Nacional - Isenta",
-    "041": "Nacional - Não tributada",
-    "050": "Nacional - Suspensão",
-    "051": "Nacional - Diferimento",
-    "060": "Nacional - ICMS cobrado anteriormente por substituição tributária",
-    "070": "Nacional - Com redução da base de cálculo e cobrança do ICMS por ST",
-    "090": "Nacional - Outras",
     "100": "Estrangeira (importação direta) - Tributada integralmente",
     "110": "Estrangeira (importação direta) - Tributada e com cobrança do ICMS por ST",
     "120": "Estrangeira (importação direta) - Com redução de base de cálculo",
@@ -2120,7 +2109,18 @@
     "851": "Nacional com > 70% de conteúdo de importação - Diferimento",
     "860": "Nacional com > 70% de conteúdo de importação - ICMS cobrado anteriormente por ST",
     "870": "Nacional com > 70% de conteúdo de importação - Com redução da BC e cobrança do ICMS por ST",
-    "890": "Nacional com > 70% de conteúdo de importação - Outras"
+    "890": "Nacional com > 70% de conteúdo de importação - Outras",
+    "000": "Nacional - Tributada integralmente",
+    "010": "Nacional - Tributada e com cobrança do ICMS por substituição tributária",
+    "020": "Nacional - Com redução de base de cálculo",
+    "030": "Nacional - Isenta ou não tributada e com cobrança do ICMS por substituição tributária",
+    "040": "Nacional - Isenta",
+    "041": "Nacional - Não tributada",
+    "050": "Nacional - Suspensão",
+    "051": "Nacional - Diferimento",
+    "060": "Nacional - ICMS cobrado anteriormente por substituição tributária",
+    "070": "Nacional - Com redução da base de cálculo e cobrança do ICMS por ST",
+    "090": "Nacional - Outras"
   },
   "CSOSN_TABLE": {
     "101": "Tributada pelo Simples Nacional com permissão de crédito",
@@ -2135,15 +2135,6 @@
     "900": "Outros"
   },
   "CST_PIS_COFINS": {
-    "01": "Operação tributável - base de cálculo = valor da operação (alíquota normal)",
-    "02": "Operação tributável - base de cálculo = valor da operação (alíquota diferenciada)",
-    "03": "Operação tributável - base de cálculo = quantidade vendida x alíquota por unidade",
-    "04": "Operação tributável - tributação monofásica (alíquota zero para o revendedor)",
-    "05": "Operação tributável - substituição tributária",
-    "06": "Operação tributável - alíquota zero",
-    "07": "Operação isenta da contribuição",
-    "08": "Operação sem incidência da contribuição",
-    "09": "Operação com suspensão da contribuição",
     "49": "Outras operações de saída",
     "50": "Operação com direito a crédito - vinculada exclusivamente a receita tributada no mercado interno",
     "51": "Operação com direito a crédito - vinculada exclusivamente a receita não tributada no mercado interno",
@@ -2167,16 +2158,25 @@
     "74": "Operação de aquisição sem incidência da contribuição",
     "75": "Operação de aquisição por ST",
     "98": "Outras operações de entrada",
-    "99": "Outras operações"
+    "99": "Outras operações",
+    "01": "Operação tributável - base de cálculo = valor da operação (alíquota normal)",
+    "02": "Operação tributável - base de cálculo = valor da operação (alíquota diferenciada)",
+    "03": "Operação tributável - base de cálculo = quantidade vendida x alíquota por unidade",
+    "04": "Operação tributável - tributação monofásica (alíquota zero para o revendedor)",
+    "05": "Operação tributável - substituição tributária",
+    "06": "Operação tributável - alíquota zero",
+    "07": "Operação isenta da contribuição",
+    "08": "Operação sem incidência da contribuição",
+    "09": "Operação com suspensão da contribuição"
   },
   "CST_IPI_ENTRADA": {
+    "49": "Outras entradas",
     "00": "Entrada com recuperação de crédito",
     "01": "Entrada tributada com alíquota zero",
     "02": "Entrada isenta",
     "03": "Entrada não tributada",
     "04": "Entrada imune",
-    "05": "Entrada com suspensão",
-    "49": "Outras entradas"
+    "05": "Entrada com suspensão"
   },
   "CST_IPI_SAIDA": {
     "50": "Saída tributada",
@@ -2188,6 +2188,153 @@
     "99": "Outras saídas"
   },
   "CEST": {
+    "1000100": {
+      "cest": "1000100",
+      "descricao": "Perfumes e águas de colônia",
+      "segmento": "10",
+      "ncm_relacionados": [
+        "33030000"
+      ]
+    },
+    "1000200": {
+      "cest": "1000200",
+      "descricao": "Produtos de beleza e maquiagem",
+      "segmento": "10",
+      "ncm_relacionados": [
+        "33049900"
+      ]
+    },
+    "1000300": {
+      "cest": "1000300",
+      "descricao": "Xampus e condicionadores",
+      "segmento": "10",
+      "ncm_relacionados": [
+        "33051000",
+        "33052000"
+      ]
+    },
+    "1000400": {
+      "cest": "1000400",
+      "descricao": "Sabonetes",
+      "segmento": "10",
+      "ncm_relacionados": [
+        "34011100",
+        "34011900"
+      ]
+    },
+    "1000500": {
+      "cest": "1000500",
+      "descricao": "Desodorantes e antitranspirantes",
+      "segmento": "10",
+      "ncm_relacionados": [
+        "33071000"
+      ]
+    },
+    "1000600": {
+      "cest": "1000600",
+      "descricao": "Cremes dentais e escovas de dente",
+      "segmento": "10",
+      "ncm_relacionados": [
+        "33062000",
+        "90212100"
+      ]
+    },
+    "1700100": {
+      "cest": "1700100",
+      "descricao": "Automóveis de passageiros",
+      "segmento": "17",
+      "ncm_relacionados": [
+        "87032100",
+        "87032200",
+        "87032300",
+        "87032400"
+      ]
+    },
+    "1700200": {
+      "cest": "1700200",
+      "descricao": "Caminhonetes e utilitários",
+      "segmento": "17",
+      "ncm_relacionados": [
+        "87042100",
+        "87042200"
+      ]
+    },
+    "1700300": {
+      "cest": "1700300",
+      "descricao": "Motocicletas",
+      "segmento": "17",
+      "ncm_relacionados": [
+        "87111000",
+        "87112000",
+        "87113000",
+        "87114000",
+        "87115000"
+      ]
+    },
+    "1700400": {
+      "cest": "1700400",
+      "descricao": "Ônibus e micro-ônibus",
+      "segmento": "17",
+      "ncm_relacionados": [
+        "87021000",
+        "87022000"
+      ]
+    },
+    "1700500": {
+      "cest": "1700500",
+      "descricao": "Caminhões",
+      "segmento": "17",
+      "ncm_relacionados": [
+        "87042100",
+        "87042200"
+      ]
+    },
+    "2100100": {
+      "cest": "2100100",
+      "descricao": "Vestuário e acessórios de malha",
+      "segmento": "21",
+      "ncm_relacionados": [
+        "61051000",
+        "61052000",
+        "61091000",
+        "61109000"
+      ]
+    },
+    "2100200": {
+      "cest": "2100200",
+      "descricao": "Calçados esportivos",
+      "segmento": "21",
+      "ncm_relacionados": [
+        "64021900",
+        "64029900"
+      ]
+    },
+    "2100300": {
+      "cest": "2100300",
+      "descricao": "Bolsas e mochilas",
+      "segmento": "21",
+      "ncm_relacionados": [
+        "42021100",
+        "42021200"
+      ]
+    },
+    "2100400": {
+      "cest": "2100400",
+      "descricao": "Óculos de sol",
+      "segmento": "21",
+      "ncm_relacionados": [
+        "90041000"
+      ]
+    },
+    "2100500": {
+      "cest": "2100500",
+      "descricao": "Relógios de pulso",
+      "segmento": "21",
+      "ncm_relacionados": [
+        "91021100",
+        "91021200"
+      ]
+    },
     "0100100": {
       "cest": "0100100",
       "descricao": "Catalisadores em suporte de cerâmica ou metal para conversão catalítica de gases de escape de veículos automotores",
@@ -2483,153 +2630,6 @@
       "ncm_relacionados": [
         "95045000"
       ]
-    },
-    "1000100": {
-      "cest": "1000100",
-      "descricao": "Perfumes e águas de colônia",
-      "segmento": "10",
-      "ncm_relacionados": [
-        "33030000"
-      ]
-    },
-    "1000200": {
-      "cest": "1000200",
-      "descricao": "Produtos de beleza e maquiagem",
-      "segmento": "10",
-      "ncm_relacionados": [
-        "33049900"
-      ]
-    },
-    "1000300": {
-      "cest": "1000300",
-      "descricao": "Xampus e condicionadores",
-      "segmento": "10",
-      "ncm_relacionados": [
-        "33051000",
-        "33052000"
-      ]
-    },
-    "1000400": {
-      "cest": "1000400",
-      "descricao": "Sabonetes",
-      "segmento": "10",
-      "ncm_relacionados": [
-        "34011100",
-        "34011900"
-      ]
-    },
-    "1000500": {
-      "cest": "1000500",
-      "descricao": "Desodorantes e antitranspirantes",
-      "segmento": "10",
-      "ncm_relacionados": [
-        "33071000"
-      ]
-    },
-    "1000600": {
-      "cest": "1000600",
-      "descricao": "Cremes dentais e escovas de dente",
-      "segmento": "10",
-      "ncm_relacionados": [
-        "33062000",
-        "90212100"
-      ]
-    },
-    "1700100": {
-      "cest": "1700100",
-      "descricao": "Automóveis de passageiros",
-      "segmento": "17",
-      "ncm_relacionados": [
-        "87032100",
-        "87032200",
-        "87032300",
-        "87032400"
-      ]
-    },
-    "1700200": {
-      "cest": "1700200",
-      "descricao": "Caminhonetes e utilitários",
-      "segmento": "17",
-      "ncm_relacionados": [
-        "87042100",
-        "87042200"
-      ]
-    },
-    "1700300": {
-      "cest": "1700300",
-      "descricao": "Motocicletas",
-      "segmento": "17",
-      "ncm_relacionados": [
-        "87111000",
-        "87112000",
-        "87113000",
-        "87114000",
-        "87115000"
-      ]
-    },
-    "1700400": {
-      "cest": "1700400",
-      "descricao": "Ônibus e micro-ônibus",
-      "segmento": "17",
-      "ncm_relacionados": [
-        "87021000",
-        "87022000"
-      ]
-    },
-    "1700500": {
-      "cest": "1700500",
-      "descricao": "Caminhões",
-      "segmento": "17",
-      "ncm_relacionados": [
-        "87042100",
-        "87042200"
-      ]
-    },
-    "2100100": {
-      "cest": "2100100",
-      "descricao": "Vestuário e acessórios de malha",
-      "segmento": "21",
-      "ncm_relacionados": [
-        "61051000",
-        "61052000",
-        "61091000",
-        "61109000"
-      ]
-    },
-    "2100200": {
-      "cest": "2100200",
-      "descricao": "Calçados esportivos",
-      "segmento": "21",
-      "ncm_relacionados": [
-        "64021900",
-        "64029900"
-      ]
-    },
-    "2100300": {
-      "cest": "2100300",
-      "descricao": "Bolsas e mochilas",
-      "segmento": "21",
-      "ncm_relacionados": [
-        "42021100",
-        "42021200"
-      ]
-    },
-    "2100400": {
-      "cest": "2100400",
-      "descricao": "Óculos de sol",
-      "segmento": "21",
-      "ncm_relacionados": [
-        "90041000"
-      ]
-    },
-    "2100500": {
-      "cest": "2100500",
-      "descricao": "Relógios de pulso",
-      "segmento": "21",
-      "ncm_relacionados": [
-        "91021100",
-        "91021200"
-      ]
     }
   },
   "metadata": {
@@ -2651,6 +2651,8 @@
       "CST_IPI_ENTRADA": 7,
       "CST_IPI_SAIDA": 7,
       "CEST": 51
-    }
+    },
+    "validacao": "reprovada",
+    "auditoria": "docs/AUDITORIA-TABELAS.md"
   }
 }

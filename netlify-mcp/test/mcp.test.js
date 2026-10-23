@@ -10,10 +10,10 @@ const request = (body, extra = {}) => new Request('http://127.0.0.1:8787/mcp', {
 });
 const rpc = (method, params = {}, id = 1) => handler(request({ jsonrpc: '2.0', id, method, params }));
 
-test('catálogo contém só quatro ferramentas, sem tabelas ou instruções extensas', async () => {
+test('catálogo anuncia só o validador; tabelas reprovadas não entram no contexto', async () => {
   const response = await rpc('tools/list');
   const body = await response.json();
-  assert.equal(body.result.tools.length, 4);
+  assert.deepEqual(body.result.tools.map(t => t.name), ['validar_chave_nfe']);
   assert.ok(Buffer.byteLength(JSON.stringify(body.result)) < 3000);
   assert.ok(body.result.tools.every(t => t.description.length < 150 && t.annotations.readOnlyHint));
 });
@@ -27,38 +27,23 @@ test('chave: vetor do upstream, espaços, DV alterado e entrada repetida', () =>
   assert.throws(() => callTool('validar_chave_nfe', { chave: 'A' + key.slice(1) }));
 });
 
-test('CFOP e CEST aceitam máscara; ausente não é declarado inválido', () => {
-  const cfop = callTool('consultar_cfop', { cfop: '5.102' });
-  assert.equal(cfop.codigo, '5102');
-  assert.equal(cfop.tipo, 'saida');
-  assert.equal(cfop.encontrado, true);
-  const unknown = callTool('consultar_cfop', { cfop: '5998' });
-  assert.equal(unknown.encontrado, false);
-  assert.equal(unknown.valido, undefined);
-  assert.match(unknown.motivo, /não comprova/);
-  const cest = callTool('consultar_cest', { cest: '01.007.00' });
-  assert.equal(cest.codigo, '0100700');
-  assert.equal(cest.cobertura, 'amostra');
-  assert.equal(cest.vigencia_validada, false);
-  assert.equal(callTool('consultar_cest', { cest: '9999999' }).encontrado, false);
+test('CFOP e CEST com divergências confirmadas não retornam conteúdo ao agente', () => {
+  assert.equal(tableMetadata.validacao, 'reprovada');
+  assert.throws(() => callTool('consultar_cfop', { cfop: '1403' }));
+  assert.throws(() => callTool('consultar_cest', { cest: '0100700' }));
+  assert.throws(() => callTool('consultar_cfop', { cfop: '5102' }));
 });
 
-test('CST: mesmo código recebe significado do tributo, sem fallback ambíguo', () => {
-  const pis = callTool('validar_cst', { cst: '50', tributo: 'PIS' });
-  const ipi = callTool('validar_cst', { cst: '50', tributo: 'IPI' });
-  assert.notEqual(pis.descricao, ipi.descricao);
-  assert.match(ipi.descricao, /Saída tributada/);
-  assert.equal(callTool('validar_cst', { cst: '101', tributo: 'CSOSN' }).encontrado, true);
-  assert.throws(() => callTool('validar_cst', { cst: '101', tributo: 'IPI' }));
-  assert.throws(() => callTool('validar_cst', { cst: '50' }));
-  assert.throws(() => callTool('consultar_cfop', { cfop: 5102 }));
-  assert.throws(() => callTool('consultar_cfop', { cfop: '__proto__' }));
-  assert.throws(() => callTool('consultar_cfop', { cfop: '5102', extra: true }));
+test('CST não pode certificar tabela incompleta; entradas erradas não são normalizadas silenciosamente', () => {
+  assert.throws(() => callTool('validar_cst', { cst: '002', tributo: 'ICMS' }));
+  assert.throws(() => callTool('validar_cst', { cst: '50', tributo: 'IPI' }));
+  assert.throws(() => callTool('validar_chave_nfe', { chave: Number(key) }));
+  assert.throws(() => callTool('validar_chave_nfe', { chave: '__proto__' }));
+  assert.throws(() => callTool('validar_chave_nfe', { chave: key, extra: true }));
 });
 
 test('orçamento de resposta: um registro, sem repetir chave ou metadados de auditoria', () => {
-  const samples = [['consultar_cfop', { cfop: '5102' }], ['validar_chave_nfe', { chave: key }],
-    ['validar_cst', { cst: '000', tributo: 'ICMS' }], ['consultar_cest', { cest: '0100700' }]];
+  const samples = [['validar_chave_nfe', { chave: key }], ['validar_chave_nfe', { chave: key.slice(0, -1) + '2' }]];
   for (const [name, args] of samples) {
     const text = JSON.stringify(callTool(name, args));
     assert.ok(Buffer.byteLength(text) < 1200);
@@ -75,12 +60,15 @@ test('MCP: negociação, notificação 202, ping e erro de ferramenta', async ()
   assert.equal(notification.status, 202);
   assert.equal(await notification.text(), '');
   assert.deepEqual((await (await rpc('ping')).json()).result, {});
-  const valid = await (await rpc('tools/call', { name: 'consultar_cfop', arguments: { cfop: '5102' } })).json();
+  const valid = await (await rpc('tools/call', { name: 'validar_chave_nfe', arguments: { chave: key } })).json();
   assert.equal(valid.result.content.length, 1);
   assert.equal(valid.result.structuredContent, undefined);
-  const invalid = await (await rpc('tools/call', { name: 'consultar_cfop', arguments: { cfop: 5102 } })).json();
+  const invalid = await (await rpc('tools/call', { name: 'validar_chave_nfe', arguments: { chave: 5102 } })).json();
   assert.equal(invalid.result.isError, true);
   assert.equal((await (await rpc('tools/call', { name: 'outra' })).json()).error.code, -32602);
+  const blocked = await (await rpc('tools/call', { name: 'consultar_cest', arguments: { cest: '0100700' } })).json();
+  assert.equal(blocked.error.code, -32602);
+  assert.equal(blocked.result, undefined);
 });
 
 test('HTTP rejeita JSON inválido, lote, corpo grande e versão desconhecida', async () => {

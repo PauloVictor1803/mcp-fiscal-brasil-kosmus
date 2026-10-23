@@ -1,7 +1,18 @@
 # ATS Fiscal MCP — piloto Netlify, sem Docker
 
-Quatro ferramentas locais, respostas curtas e nenhuma conexão configurada na Tina.
-Node.js 22+; sem dependências de produção. O servidor Python original permanece disponível.
+Node.js 22+, sem dependências de produção. O servidor Python original permanece
+no repositório. Nenhuma conexão foi configurada na Tina e nenhum deploy foi feito.
+
+## Estado atual após auditoria de dados
+
+**Só `validar_chave_nfe` está disponível.** A implementação das outras três
+ferramentas existe, mas CFOP, CST/CSOSN e CEST foram retiradas de `tools/list` e
+chamadas diretas são recusadas. A auditoria encontrou descrições incorretas e
+cobertura incompleta no snapshot herdado do fork.
+
+Veja [a auditoria e os exemplos oficiais](docs/AUDITORIA-TABELAS.md).
+A validação do protocolo não certifica a correção fiscal dos dados.
+A consulta NCM do Siscomex existente está fora deste projeto e deve ser preservada.
 
 ## Executar e testar
 
@@ -12,86 +23,75 @@ npm test
 npm start
 ```
 
-Abra http://127.0.0.1:8787 para usar o painel de teste, ou conecte
-http://127.0.0.1:8787/mcp a um cliente MCP Streamable HTTP.
-O endpoint aceita POST com `Content-Type: application/json` e
-`Accept: application/json, text/event-stream`. A página de teste é servida pela
-Netlify e pelo script local em `/`. O token digitado no painel não é persistido.
+Abra http://127.0.0.1:8787 para o painel de teste ou conecte
+http://127.0.0.1:8787/mcp com um cliente MCP Streamable HTTP.
+O painel só habilita o validador de chave. O token digitado não é persistido.
 
-## Publicar na Netlify
+## Publicar o piloto na Netlify
 
-Importe esta branch do fork e use o `netlify.toml` da raiz. Ele seleciona a base
-`netlify-mcp`, publica somente `public/` e empacota os dados com a função.
-Configure `AUTH_TOKEN` no painel da Netlify, com um valor longo e aleatório.
-O endpoint público falha fechado sem essa variável. Não versione o segredo.
-URL após implantação: `https://<nome-do-site>.netlify.app/mcp`.
-Não há exigência de Docker, certificado digital ou API paga para estas funções.
-O plano gratuito permanece sujeito aos limites da Netlify.
+Importe a branch do fork e use o `netlify.toml` da raiz. A base é `netlify-mcp`;
+somente `public/` é publicada. Configure `AUTH_TOKEN` no painel da Netlify com
+valor longo e aleatório; o endpoint público falha fechado se não houver segredo.
+Não versione o token. URL esperada: `https://<nome-do-site>.netlify.app/mcp`.
+Nenhum Docker, certificado digital ou API paga é exigido pelo validador.
+O plano gratuito continua sujeito aos limites da Netlify.
 
-## Ferramentas
+## Validador disponível
 
-| Nome | Parâmetros | Retorno |
-| --- | --- | --- |
-| `consultar_cfop` | `cfop` string, ex. `5.102` | Um registro: descrição, tipo e âmbito |
-| `validar_chave_nfe` | `chave` string, 44 dígitos | Formato numérico e DV; não consulta SEFAZ |
-| `validar_cst` | `cst` string e `tributo` | Um código na tabela especificada |
-| `consultar_cest` | `cest` string, ex. `01.007.00` | Um registro da amostra e até 12 NCMs |
-
-Tributos: `ICMS`, `CSOSN`, `IPI`, `PIS`, `COFINS`. Em ICMS informar os três
-dígitos combinados de origem+CST, preservando zeros; CSOSN tem três dígitos;
-IPI/PIS/COFINS têm dois. A consulta não tenta adivinhar o tributo.
+Parâmetro `chave`: string com 44 dígitos, aceitando espaços entre grupos.
+Confere formato numérico e dígito verificador; não consulta autorização, situação
+fiscal, validade de CNPJ, assinatura ou existência de nota na SEFAZ.
+Não retorna a chave, CNPJ ou demais dados extraídos ao modelo.
 
 ```json
-{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"consultar_cfop","arguments":{"cfop":"5102"}}}
+{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"validar_chave_nfe","arguments":{"chave":"35240112345678000195550010000001231000000011"}}}
 ```
+
+A chave acima é um vetor de teste do upstream, não evidência de nota autorizada.
 
 ## Economia de contexto
 
-- Catálogo com apenas quatro ferramentas, descrições curtas, sem `instructions` globais.
-- Um bloco `content` por resposta; não duplica o mesmo resultado em texto e JSON.
-- Não envia tabelas, histórico, hashes ou documentação ao modelo.
-- Validação de chave não devolve a chave, CNPJ ou outros dados extraídos.
-- Testes limitam o catálogo a 3 KB e respostas representativas a 1,2 KB.
-  Bytes não são tokens: o consumo real depende do modelo e da plataforma.
-- Restrições de cobertura acompanham os resultados fiscais para não perder contexto.
+- Catálogo anuncia somente ferramentas cujos dados podem ser usados.
+- Descrições curtas e nenhuma instrução global extensa.
+- Um bloco de resultado por chamada, sem duplicação entre texto e JSON.
+- Tabelas, auditoria, hashes e documentação não são enviados ao modelo.
+- Os testes mantêm limites de 3 KB para catálogo e 1,2 KB para respostas.
+  Bytes não são tokens; consumo real depende do modelo e da plataforma.
 
-Na verificação local desta versão, o catálogo ocupou **1.931 bytes**. A maior
-resposta encontrada ao consultar os **644 registros/combinações** disponíveis
-ocupou **291 bytes** (somente o resultado da ferramenta, sem envelope JSON-RPC).
-Também passaram os oito testes automatizados, o empacotamento esbuild e uma
-conexão real por HTTP usando o cliente oficial `@modelcontextprotocol/sdk`.
-Isso não representa teste de deploy real na Netlify nem de conexão com a Tina.
+Antes da auditoria, o catálogo com quatro ferramentas tinha 1.931 bytes e as
+respostas de dados até 291 bytes. Essas medidas comprovavam tamanho, não correção
+fiscal, e não devem ser usadas como aprovação das tabelas.
 
-## Dados e limites do piloto
+## Retomar as consultas de tabelas
 
-`data/tabelas.json` é um snapshot do commit original documentado nos metadados.
-Foi exportado por AST/SQLite em modo de leitura, sem executar o módulo do fork.
-Contém 404 registros CFOP, 99 CST ICMS, 10 CSOSN, 33 PIS/COFINS,
-14 IPI e **51 registros de amostra CEST**. A cobertura e a vigência ainda
-não foram auditadas contra as fontes oficiais. Não tratar o snapshot como
-tabela completa ou atualizada. `encontrado: false` não significa código inválido.
-Mesmo `encontrado: true` não comprova adequação à operação ou vigência.
+As tabelas em `data/tabelas.json` são evidência do snapshot reprovado, não dados
+aprovados para consulta. O CEST possui 51 registros de amostra. A auditoria também
+identificou divergências de CFOP e lacunas em CST ICMS. CSOSN, IPI e PIS/COFINS não
+foram certificados por contagem de códigos ou por testes do transporte.
 
-Antes de conectar à Tina, revisar as tabelas e substituir a amostra CEST por
-fonte completa com data de referência e vigências. Não inferir códigos ausentes.
-O escopo não inclui escolher tributação, calcular impostos ou emitir documentos.
-
-Para reexportar, a partir da raiz do fork:
+É necessário substituir/revisar os dados em fontes oficiais, verificar vigências
+e registrar essa conclusão antes de `metadata.validacao` receber `aprovada`.
+Não basta mudar o marcador. Reexportar o fork com o script abaixo gera estado
+`pendente`, que mantém o bloqueio.
 
 ```sh
 python scripts/export_netlify_tables.py
 ```
 
-## Transporte
+A implementação planejada exige `tributo` em consultas CST e não tenta adivinhar
+entre ICMS, CSOSN, IPI, PIS ou COFINS. Também não escolhe enquadramento tributário.
 
-Streamable HTTP sem sessões, negociação das versões 2025-03-26, 2025-06-18 e
-2025-11-25, respostas JSON. GET/SSE e DELETE retornam 405; notificações aceitas
-retornam 202 vazio. Não anuncia SSE legado. Não mantém estado entre invocações.
-Só permite Origin do próprio domínio ou da lista `ALLOWED_ORIGINS` (separada por
-vírgulas). Chamadas servidor-a-servidor podem omitir Origin.
-Corpo limitado a 8 KB. Usa a API moderna de Netlify Functions com Web Request.
+## Transporte e autenticação
+
+Streamable HTTP sem sessões, respostas JSON, versões 2025-03-26, 2025-06-18 e
+2025-11-25. GET/SSE e DELETE retornam 405; notificações aceitas retornam 202 vazio.
+POST exige `Content-Type: application/json` e
+`Accept: application/json, text/event-stream`. Corpo limitado a 8 KB.
+Autenticação via `Authorization: Bearer <AUTH_TOKEN>`.
+Origin só pode ser o próprio domínio ou constar em `ALLOWED_ORIGINS`, separadas
+por vírgulas. Chamadas servidor-a-servidor podem omitir Origin.
 
 ## Licença
 
-Lógica e tabelas adaptadas de MCP Fiscal Brasil, Copyright (c) 2026 Nikolas DeHor,
-licença MIT preservada em `../LICENSE`. A licença do código não certifica os dados.
+Lógica e tabelas adaptadas do MCP Fiscal Brasil, Copyright (c) 2026 Nikolas DeHor.
+Licença MIT preservada em `../LICENSE`; a licença do código não certifica os dados.

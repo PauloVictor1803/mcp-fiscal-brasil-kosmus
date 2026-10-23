@@ -32,6 +32,7 @@ tables['metadata'] = {
     'sha256_loader': hashlib.sha256(source.read_bytes()).hexdigest(),
     'sha256_cest_db': hashlib.sha256(db.read_bytes()).hexdigest(),
     'vigencia_validada': False,
+    'validacao': 'pendente',
     'cobertura': {'CFOP': 'parcial_nao_auditada', 'CST': 'parcial_nao_auditada', 'CEST': 'amostra'},
     'quantidades': {name: len(data) for name, data in tables.items()},
 }
