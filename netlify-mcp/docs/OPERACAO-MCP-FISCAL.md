@@ -237,3 +237,25 @@ Verificações finais:
 - Execução automática e diagnóstico de rede: https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40009121713
 - Commit integrado: e84ed718c9a349526e16b2820bb2f688c505028e
 - Próxima ação de manutenção: resolver o acesso HTTPS do executor ao CONFAZ e repetir a execução até validar download, reconstrução, testes e gravação. Não alterar fontes nem desativar validações para mascarar falhas.
+
+## 13. Investigação de conectividade ao CONFAZ — 23/10/2026
+
+A página do Convênio 142/18 respondeu nesta rede com HTTP 200, 933.142 bytes, em aproximadamente 0,3 segundo.
+No GitHub Actions, as duas tentativas Ubuntu falharam com ConnectTimeout.
+O teste adicional em macOS, com três tentativas por fonte, também falhou para os quatro documentos antes de receber resposta HTTP.
+Não foi encontrado comunicado oficial específico que comprove bloqueio geográfico ou de IP do CONFAZ.
+Logo, a causa é uma hipótese de rota ou restrição de origem, não um diagnóstico confirmado de bloqueio.
+
+Referências:
+
+- Infraestrutura dos executores: https://docs.github.com/en/actions/reference/runners/github-hosted-runners#ip-addresses
+- IPs compartilhados e reputação: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/about-githubs-ip-addresses
+- Teste macOS: https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40010291996
+
+O importador agora registra o nome de cada fonte e limita as tentativas de conexão, mantendo TLS e todas as validações.
+A mudança de executor não resolveu a conectividade. A automação segue pendente de uma origem de rede que alcance o CONFAZ.
+Alternativa em estudo: executar apenas a coleta e reconstrução em máquina da ATS com acesso comprovado, publicar o JSON validado no GitHub e conservar o MCP na Netlify.
+Isso exigirá definir máquina disponível, agendamento e autenticação restrita para enviar o arquivo ao repositório; nada disso foi instalado nesta etapa.
+
+Na Tina, usar Servidores MCP (não a seção OpenAPI). Nome sugerido: fiscal_ats. URL e cabeçalhos constam na seção 10.
+Primeiro cadastrar o AUTH_TOKEN da Netlify como segredo MCP_FISCAL_TOKEN, testar conexão e conferir as quatro ferramentas. A Tina ainda não foi alterada.
