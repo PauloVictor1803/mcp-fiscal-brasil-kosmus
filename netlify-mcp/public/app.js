@@ -3,7 +3,7 @@ const forms = {
   consultar_cfop: ['cfop', 'CFOP', '5102'],
   validar_chave_nfe: ['chave', 'Chave com 44 dígitos', ''],
   validar_cst: ['cst', 'CST/CSOSN (preserve os zeros)', '000'],
-  consultar_cest: ['cest', 'CEST (amostra)', '01.007.00'],
+  consultar_cest: ['cest', 'CEST', '01.007.00'],
 };
 byId('tool').addEventListener('change', () => {
   const [, label, example] = forms[byId('tool').value];

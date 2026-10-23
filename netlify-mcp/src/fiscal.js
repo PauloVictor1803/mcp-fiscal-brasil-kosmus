@@ -1,5 +1,39 @@
-// Adaptado do MCP Fiscal Brasil, MIT, Copyright (c) 2026 Nikolas DeHor.
-import data from '../data/tabelas.json' with { type: 'json' };
+// Transporte inspirado no MCP Fiscal Brasil (MIT). Dados reconstruídos em fontes oficiais.
+import bundledData from '../data/tabelas.json' with { type: 'json' };
+let data = bundledData;
+let nextCheck = 0;
+let etag;
+let updating;
+const remoteURL = 'https://raw.githubusercontent.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/main/netlify-mcp/data/tabelas.json';
+
+export async function refreshTables() {
+  if (process.env.TABLES_AUTO_UPDATE !== 'true' || Date.now() < nextCheck) return;
+  if (updating) return updating;
+  updating = (async () => {
+    try {
+      const response = await fetch(remoteURL, { headers: etag ? { 'If-None-Match': etag } : {}, signal: AbortSignal.timeout(5000) });
+      if (response.status === 304) { nextCheck = Date.now() + 3600000; return; }
+      if (!response.ok || Number(response.headers.get('content-length')) > 2000000) throw new Error('Referência remota indisponível.');
+      const raw = await response.text();
+      if (Buffer.byteLength(raw) > 2000000) throw new Error('Referência remota excede limite.');
+      const candidate = JSON.parse(raw);
+      if (candidate.metadata?.validacao !== 'aprovada' || !/^\d{4}-\d{2}-\d{2}$/.test(candidate.metadata?.data_referencia || '')
+        || !candidate.CFOP_TABLE?.['1403']?.[0]?.includes('substituição tributária')
+        || !candidate.CEST?.['0100700']?.descricao?.includes('gaxetas')
+        || !candidate.CST_ICMS?.['02'] || !candidate.CSOSN_TABLE?.['101']
+        || Object.keys(candidate.CFOP_TABLE).length < 600 || Object.keys(candidate.CEST).length < 1000
+        || !candidate.CST_IPI?.['50'] || !candidate.CST_PIS?.['50'] || !candidate.CST_COFINS?.['50']
+        || !candidate.ORIGENS?.['0'] || candidate.metadata.data_referencia < data.metadata.data_referencia) throw new Error('Referência remota não passou na validação.');
+      data = candidate;
+      etag = response.headers.get('etag');
+      nextCheck = Date.now() + 3600000;
+    } catch {
+      nextCheck = Date.now() + 300000;
+      console.warn('Atualização fiscal indisponível; preservada a última referência validada.');
+    } finally { updating = undefined; }
+  })();
+  return updating;
+}
 const own = (obj, key) => Object.hasOwn(obj, key);
 const schema = (properties, required) => ({ type: 'object', properties, required, additionalProperties: false });
 const code = (description, pattern) => ({ type: 'string', description, pattern, maxLength: 80 });
@@ -11,9 +45,9 @@ const declaredTools = [
   { name: 'validar_chave_nfe', description: 'Confere formato e dígito da chave NF-e/NFC-e; não consulta autorização.',
     inputSchema: schema({ chave: code('44 dígitos; aceita espaços entre grupos.', '^[0-9\\s]{44,80}$') }, ['chave']), annotations },
   { name: 'validar_cst', description: 'Consulta CST/CSOSN na tabela do tributo informado; não valida sua aplicação à operação.',
-    inputSchema: schema({ cst: code('ICMS: origem+CST, 3 dígitos. CSOSN: 3. IPI/PIS/COFINS: 2.', '^[0-9]{2,3}$'),
+    inputSchema: schema({ cst: code('ICMS: CST com 2 ou origem+CST com 3 dígitos. CSOSN: 3. Demais: 2.', '^[0-9]{2,3}$'),
       tributo: { type: 'string', enum: ['ICMS', 'CSOSN', 'IPI', 'PIS', 'COFINS'] } }, ['cst', 'tributo']), annotations },
-  { name: 'consultar_cest', description: 'Consulta um CEST na amostra local; ausência não comprova código inválido.',
+  { name: 'consultar_cest', description: 'Consulta descrição e NCM/SH do CEST no CONFAZ; não determina aplicação de ST.',
     inputSchema: schema({ cest: code('7 dígitos; aceita 01.007.00.', '^\\s*[0-9]{2}\\.?[0-9]{3}\\.?[0-9]{2}\\s*$') }, ['cest']), annotations },
 ];
 
@@ -37,8 +71,9 @@ export function validateArguments(tool, args) {
 
 function lookupResult(tabela, codigo, registro, extra = {}) {
   const result = { codigo, encontrado: Boolean(registro), ...registro, ...extra,
-    cobertura: data.metadata.cobertura[tabela], vigencia_validada: false };
-  if (!registro) result.motivo = 'Não localizado nesta base; não comprova código inválido.';
+    referencia: data.metadata.data_referencia };
+  if ((Date.now() - Date.parse(data.metadata.data_referencia)) / 86400000 > 2) result.atualizacao_atrasada = true;
+  if (!registro) result.motivo = 'Não localizado na referência consultada; não comprova código inválido.';
   return result;
 }
 
@@ -67,19 +102,28 @@ export function callTool(name, args) {
   }
   if (name === 'validar_cst') {
     const { cst, tributo } = args;
-    const size = ['ICMS', 'CSOSN'].includes(tributo) ? 3 : 2;
-    if (cst.length !== size) throw new Error(`${tributo} exige ${size} dígitos neste serviço.`);
-    const table = tributo === 'ICMS' ? data.CST_ICMS_NORMAL : tributo === 'CSOSN' ? data.CSOSN_TABLE
-      : tributo === 'IPI' ? { ...data.CST_IPI_ENTRADA, ...data.CST_IPI_SAIDA } : data.CST_PIS_COFINS;
-    const descricao = own(table, cst) ? table[cst] : null;
-    return lookupResult('CST', cst, descricao && { descricao }, { tributo });
+    if ((tributo === 'CSOSN' && cst.length !== 3) || (!['ICMS','CSOSN'].includes(tributo) && cst.length !== 2)) throw new Error('Quantidade de dígitos incompatível com o tributo.');
+    const table = tributo === 'ICMS' ? data.CST_ICMS : tributo === 'CSOSN' ? data.CSOSN_TABLE
+      : tributo === 'IPI' ? data.CST_IPI : tributo === 'PIS' ? data.CST_PIS : data.CST_COFINS;
+    const codigo = tributo === 'ICMS' ? cst.slice(-2) : cst;
+    const row = own(table, codigo) ? table[codigo] : null;
+    const record = typeof row === 'string' ? { descricao: row, status: 'ativo' } : row;
+    const extra = { tributo };
+    if (tributo === 'ICMS' && cst.length === 3) {
+      if (!own(data.ORIGENS, cst[0])) throw new Error('Origem da mercadoria não localizada.');
+      extra.origem = data.ORIGENS[cst[0]];
+    }
+    return lookupResult('CST', cst, record, extra);
   }
   const codigo = args.cest.trim().replaceAll('.', '');
   const row = own(data.CEST, codigo) ? data.CEST[codigo] : null;
-  // Limite explícito para o contexto do agente, mesmo se a base crescer.
-  return lookupResult('CEST', codigo, row && { descricao: row.descricao,
-    ncm_relacionados: row.ncm_relacionados.slice(0, 12),
-    ...(row.ncm_relacionados.length > 12 ? { ncms_omitidos: row.ncm_relacionados.length - 12 } : {}) });
+  const today = new Date().toISOString().slice(0, 10);
+  if (row?.fim && today > row.fim) return lookupResult('CEST', codigo, { status: 'referencia_expirada', motivo: 'Aguardar atualização da redação oficial.' });
+  if (row?.status === 'vigencia_futura' && today >= row.inicio) return lookupResult('CEST', codigo, { status: 'aguardando_atualizacao', inicio: row.inicio });
+  return lookupResult('CEST', codigo, row && { status: row.status,
+    ...(row.descricao ? { descricao: row.descricao, ncm_sh: row.ncm_sh_texto_fonte } : {}),
+    ...(row.inicio && row.status === 'vigencia_futura' ? { inicio: row.inicio } : {}),
+    ...(row.ncm_sh_requer_conferencia ? { aviso: 'NCM/SH do texto oficial requer conferência no Siscomex.' } : {}) });
 }
 
 export const tableMetadata = data.metadata;

@@ -87,3 +87,6 @@ playwright-report/
 test-results/
 agent-browser*.png
 browser-use*.log
+
+# Netlify local cache
+.netlify/
