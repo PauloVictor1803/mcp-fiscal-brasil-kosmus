@@ -54,10 +54,12 @@ test('busca CEST por produto, NCM e modalidade distingue os xampus',()=>{
  assert.ok(callTool('consultar_cest',{ncm:'39171010'}).candidatos.some(r=>r.ncm_sh.includes('3917')));
  assert.equal(callTool('consultar_cest',{descricao:'xampu',ncm:'87032100'}).encontrado,false);
  assert.equal(callTool('consultar_cest',{descricao:'zzzzinexistente'}).total,0);
+ assert.ok(callTool('consultar_cest',{descricao:'condicionador'}).candidatos.some(r=>r.cest==='20.021.00'));
+ assert.ok(callTool('consultar_cest',{descricao:'sabonete'}).total>0);
 });
 test('busca CEST rejeita entradas ambiguas e limita candidatos e contexto',()=>{
- for(const args of [{},{descricao:' '},{descricao:'de para'},{ncm:'33'},{cest:'2001700',descricao:'xampu'},{descricao:'a'.repeat(121)},{modalidade_venda:'outras'}])assert.throws(()=>callTool('consultar_cest',args));
- for(const descricao of ['produtos','preparações','óleo','cabelo','xampu','polietileno']){
+ for(const args of [{},{descricao:' '},{descricao:'produto'},{descricao:'de para'},{ncm:'33'},{cest:'2001700',descricao:'xampu'},{descricao:'a'.repeat(121)},{modalidade_venda:'outras'}])assert.throws(()=>callTool('consultar_cest',args));
+ for(const descricao of ['sabão','preparações','óleo','cabelo','xampu','polietileno']){
   const r=callTool('consultar_cest',{descricao});assert.ok(r.candidatos.length<=3);
   assert.ok(Buffer.byteLength(JSON.stringify(r))<3000);
   assert.equal(r.mais_resultados,r.total>r.candidatos.length);

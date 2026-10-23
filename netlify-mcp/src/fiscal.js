@@ -95,8 +95,13 @@ function validateKey(raw) {
 
 const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 function terms(text) {
-  return normalize(text).match(/[a-z0-9]+/g)?.filter(t => !['de','da','do','das','dos','para','por','com','sem','e','o','a','os','as'].includes(t))
-    .map(t => /^(shampoos?|xampus?|champus?)$/.test(t) ? 'xampu' : t.length > 3 && t.endsWith('s') ? t.slice(0, -1) : t) || [];
+  return normalize(text).match(/[a-z0-9]+/g)?.filter(t => !['de','da','do','das','dos','para','por','com','sem','e','o','a','os','as','produto','produtos','mercadoria','mercadorias','item','itens'].includes(t))
+    .flatMap(t => {
+      if (/^(shampoos?|xampus?|champus?)$/.test(t)) return 'xampu';
+      const singular = t.endsWith('ores') ? t.slice(0, -2) : t.endsWith('oes') ? t.slice(0, -3) + 'ao'
+        : t.endsWith('ais') ? t.slice(0, -3) + 'al' : t.length > 3 && t.endsWith('s') ? t.slice(0, -1) : t;
+      return singular === 'sabonete' ? ['sabao', 'toucador'] : singular;
+    }) || [];
 }
 const segmentCondition = codigo => codigo.startsWith('28') ? 'Venda pelo sistema porta a porta (Anexo XXVI)' : 'Conferir segmento e descrição do anexo';
 function searchCest(args) {
@@ -131,6 +136,7 @@ function searchCest(args) {
   const perguntas = [];
   if (candidatos.length && !ncm) perguntas.push('Qual é o NCM confirmado do produto?');
   if (matches.some(m => m.cest.startsWith('28.')) && matches.some(m => !m.cest.startsWith('28.'))) perguntas.push('A operação é venda pelo sistema porta a porta?');
+  if (matches.length > 1) perguntas.push('Qual a apresentação/embalagem e quais as características do produto?');
   if (candidatos.length) perguntas.push('A descrição oficial corresponde às características e ao uso do produto?');
   const result = { encontrado: matches.length > 0, candidatos, total: matches.length, mais_resultados: candidatos.length < matches.length,
     ...(perguntas.length ? { confirmar: perguntas } : {}),
