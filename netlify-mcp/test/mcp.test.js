@@ -38,6 +38,32 @@ test('limite de contexto em todos os registros',()=>{
  ...[['ICMS',data.CST_ICMS],['CSOSN',data.CSOSN_TABLE],['IPI',data.CST_IPI],['PIS',data.CST_PIS],['COFINS',data.CST_COFINS]].flatMap(([tributo,table])=>Object.keys(table).map(cst=>['validar_cst',{cst,tributo}]))];
  for(const [name,args]of cases){const text=JSON.stringify(callTool(name,args));assert.ok(Buffer.byteLength(text)<3000,JSON.stringify(args));assert.ok(!text.includes('sha256'));}
 });
+test('busca CEST por produto, NCM e modalidade distingue os xampus',()=>{
+ for(const descricao of ['xampu','XAMPUS','shampoo','shampoos']){
+  const result=callTool('consultar_cest',{descricao});
+  assert.deepEqual(result.candidatos.map(r=>r.cest),['20.017.00','28.011.00']);
+  assert.match(result.candidatos[1].condicao,/porta a porta/);
+  assert.ok(result.confirmar.some(p=>p.includes('porta a porta')));
+ }
+ const exact=callTool('consultar_cest',{ncm:'3305.10.00'});
+ assert.equal(exact.total,2);
+ assert.equal(callTool('consultar_cest',{descricao:'xampu',ncm:'33051000',modalidade_venda:'outras'}).candidatos[0].cest,'20.017.00');
+ const direct=callTool('consultar_cest',{ncm:'33051000',modalidade_venda:'porta_a_porta'});
+ assert.equal(direct.total,1);assert.equal(direct.candidatos[0].cest,'28.011.00');
+ // Posição SH parcial 3917 também pode gerar candidato, sem fabricar um NCM.
+ assert.ok(callTool('consultar_cest',{ncm:'39171010'}).candidatos.some(r=>r.ncm_sh.includes('3917')));
+ assert.equal(callTool('consultar_cest',{descricao:'xampu',ncm:'87032100'}).encontrado,false);
+ assert.equal(callTool('consultar_cest',{descricao:'zzzzinexistente'}).total,0);
+});
+test('busca CEST rejeita entradas ambiguas e limita candidatos e contexto',()=>{
+ for(const args of [{},{descricao:' '},{descricao:'de para'},{ncm:'33'},{cest:'2001700',descricao:'xampu'},{descricao:'a'.repeat(121)},{modalidade_venda:'outras'}])assert.throws(()=>callTool('consultar_cest',args));
+ for(const descricao of ['produtos','preparações','óleo','cabelo','xampu','polietileno']){
+  const r=callTool('consultar_cest',{descricao});assert.ok(r.candidatos.length<=3);
+  assert.ok(Buffer.byteLength(JSON.stringify(r))<3000);
+  assert.equal(r.mais_resultados,r.total>r.candidatos.length);
+  assert.ok(r.candidatos.every(c=>data.CEST[c.cest.replaceAll('.','')].status==='ativo'));
+ }
+});
 test('HTTP e autenticacao',async()=>{
  assert.equal((await handler(new Request('http://localhost/mcp',{method:'POST',headers,body:'{'}))).status,400);
  assert.equal((await handler(req({x:'x'.repeat(9000)}))).status,413);

@@ -47,8 +47,11 @@ const declaredTools = [
   { name: 'validar_cst', description: 'Consulta CST/CSOSN na tabela do tributo informado; não valida sua aplicação à operação.',
     inputSchema: schema({ cst: code('ICMS: CST com 2 ou origem+CST com 3 dígitos. CSOSN: 3. Demais: 2.', '^[0-9]{2,3}$'),
       tributo: { type: 'string', enum: ['ICMS', 'CSOSN', 'IPI', 'PIS', 'COFINS'] } }, ['cst', 'tributo']), annotations },
-  { name: 'consultar_cest', description: 'Consulta descrição e NCM/SH do CEST no CONFAZ; não determina aplicação de ST.',
-    inputSchema: schema({ cest: code('7 dígitos; aceita 01.007.00.', '^\\s*[0-9]{2}\\.?[0-9]{3}\\.?[0-9]{2}\\s*$') }, ['cest']), annotations },
+  { name: 'consultar_cest', description: 'Busca CEST por descrição do produto ou NCM, ou consulta pelo CEST. Retorna candidatos e condições; não determina ST.',
+    inputSchema: schema({ cest: code('CEST conhecido; use sozinho.', '^\\s*[0-9]{2}\\.?[0-9]{3}\\.?[0-9]{2}\\s*$'),
+      descricao: { type: 'string', description: 'Produto, por exemplo xampu. Pode combinar com NCM.', maxLength: 120 },
+      ncm: code('NCM de 8 dígitos confirmado na consulta Siscomex.', '^\\s*(?:[0-9]{8}|[0-9]{4}\\.[0-9]{2}\\.[0-9]{2})\\s*$'),
+      modalidade_venda: { type: 'string', enum: ['porta_a_porta', 'outras'], description: 'Preencher somente após confirmar o sistema de venda.' } }, []), annotations },
 ];
 
 // Falha fechada: revisão técnica do transporte não aprova conteúdo fiscal.
@@ -90,11 +93,63 @@ function validateKey(raw) {
   return result;
 }
 
+const normalize = text => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+function terms(text) {
+  return normalize(text).match(/[a-z0-9]+/g)?.filter(t => !['de','da','do','das','dos','para','por','com','sem','e','o','a','os','as'].includes(t))
+    .map(t => /^(shampoos?|xampus?|champus?)$/.test(t) ? 'xampu' : t.length > 3 && t.endsWith('s') ? t.slice(0, -1) : t) || [];
+}
+const segmentCondition = codigo => codigo.startsWith('28') ? 'Venda pelo sistema porta a porta (Anexo XXVI)' : 'Conferir segmento e descrição do anexo';
+function searchCest(args) {
+  if (args.cest) {
+    if (Object.keys(args).length !== 1) throw new Error('Consulte pelo CEST sozinho ou busque por descrição/NCM.');
+    return null;
+  }
+  const query = terms(args.descricao || '');
+  if ((!args.ncm && !query.length) || (args.descricao !== undefined && !query.length)) throw new Error('Informe a descrição do produto ou o NCM.');
+  const ncm = args.ncm?.trim().replaceAll('.', '');
+  const today = new Date().toISOString().slice(0, 10);
+  const matches = [];
+  for (const [codigo, row] of Object.entries(data.CEST)) {
+    if (row.status !== 'ativo' || row.ncm_sh_requer_conferencia || (row.fim && today > row.fim) || (row.inicio && today < row.inicio)) continue;
+    if (args.modalidade_venda && (codigo.startsWith('28') !== (args.modalidade_venda === 'porta_a_porta'))) continue;
+    const words = terms(row.descricao || '');
+    if (!query.every(t => words.includes(t))) continue;
+    // Posições parciais são prefixos candidatos, não uma classificação definitiva.
+    const codes = (row.ncm_sh || []).map(c => c.replaceAll('.', '')).filter(c => /^\d{2,8}$/.test(c));
+    if (ncm && !codes.some(c => ncm.startsWith(c))) continue;
+    matches.push({ cest: codigo.replace(/^(\d{2})(\d{3})(\d{2})$/, '$1.$2.$3'), descricao: row.descricao,
+      ncm_sh: row.ncm_sh_texto_fonte, segmento: codigo.slice(0, 2),
+      ...(codigo.startsWith('20') ? { segmento_nome: 'Produtos de perfumaria e de higiene pessoal e cosméticos' } : {}),
+      ...(codigo.startsWith('28') ? { condicao: segmentCondition(codigo) } : {}) });
+  }
+  matches.sort((a, b) => a.cest.localeCompare(b.cest));
+  const candidatos = [];
+  for (const match of matches.slice(0, 3)) {
+    if (Buffer.byteLength(JSON.stringify([...candidatos, match])) > 2200) break;
+    candidatos.push(match);
+  }
+  const perguntas = [];
+  if (candidatos.length && !ncm) perguntas.push('Qual é o NCM confirmado do produto?');
+  if (matches.some(m => m.cest.startsWith('28.')) && matches.some(m => !m.cest.startsWith('28.'))) perguntas.push('A operação é venda pelo sistema porta a porta?');
+  if (candidatos.length) perguntas.push('A descrição oficial corresponde às características e ao uso do produto?');
+  const result = { encontrado: matches.length > 0, candidatos, total: matches.length, mais_resultados: candidatos.length < matches.length,
+    ...(perguntas.length ? { confirmar: perguntas } : {}),
+    orientacao: matches.length ? 'Candidatos da tabela oficial; confirmar descrição, segmento e NCM antes de indicar. CEST não determina aplicação de ST.'
+      : 'Nenhum candidato nesta referência. Refine a descrição ou confira o NCM no Siscomex; isso não comprova ausência de CEST.',
+    referencia: data.metadata.data_referencia, fonte: 'https://www.confaz.fazenda.gov.br/legislacao/convenios/2018/CV142_18' };
+  if ((Date.now() - Date.parse(data.metadata.data_referencia)) / 86400000 > 2) result.atualizacao_atrasada = true;
+  return result;
+}
+
 export function callTool(name, args) {
   const tool = tools.find(t => t.name === name);
   if (!tool) throw new Error('Ferramenta desconhecida.');
   validateArguments(tool, args);
   if (name === 'validar_chave_nfe') return validateKey(args.chave);
+  if (name === 'consultar_cest') {
+    const result = searchCest(args);
+    if (result) return result;
+  }
   if (name === 'consultar_cfop') {
     const codigo = args.cfop.trim().replace('.', '');
     const row = own(data.CFOP_TABLE, codigo) ? data.CFOP_TABLE[codigo] : null;
