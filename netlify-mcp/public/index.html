@@ -6,18 +6,20 @@
 <p>CFOP, CST/CSOSN e CEST em fontes oficiais, com validação matemática de chave NF-e/NFC-e.</p>
 <p>Endpoint: <code>/mcp</code> · Streamable HTTP com respostas JSON · Autenticação Bearer.</p>
 <p>Os dados do fork foram substituídos por referências oficiais do CONFAZ e do manual NF-e.
-Atualização diária com validação. A consulta informa referência, revogações e vigências futuras;
+A atualização automática está em validação por falha de acesso ao CONFAZ. A consulta informa referência, revogações e vigências futuras;
 não determina o enquadramento tributário. NCM continua na consulta Siscomex existente.
-Este piloto ainda não está conectado à Tina.</p>
+O CEST também pode ser pesquisado por descrição ou NCM, com candidatos e condições a confirmar.</p>
 <h2>Testar uma consulta</h2>
 <form id="teste">
 <label>Token de acesso <input id="token" type="password" autocomplete="off" placeholder="AUTH_TOKEN configurado na Netlify"></label>
 <small>Usado somente na requisição. Não é gravado no navegador.</small>
 <label>Ferramenta <select id="tool"><option value="validar_chave_nfe">Validar chave NF-e/NFC-e</option><option value="consultar_cfop">Consultar CFOP</option><option value="validar_cst">Consultar CST/CSOSN</option><option value="consultar_cest">Consultar CEST</option></select></label>
 <label><span id="campo">Chave com 44 dígitos</span> <input id="codigo" type="text" maxlength="80" required></label>
+<label id="cest-modo-label" hidden>Pesquisar CEST por <select id="cest-modo"><option value="descricao">Descrição do produto</option><option value="ncm">NCM</option><option value="cest">Código CEST</option></select></label>
 <label id="tributo-label" hidden>Tributo <select id="tributo"><option>ICMS</option><option>CSOSN</option><option>IPI</option><option>PIS</option><option>COFINS</option></select></label>
 <button id="executar">Executar consulta</button>
 </form>
 <pre id="resultado" role="status" aria-live="polite">Selecione uma ferramenta e execute.</pre>
 <script type="module" src="/app.js"></script>
+<style>[hidden]{display:none!important}</style>
 </html>

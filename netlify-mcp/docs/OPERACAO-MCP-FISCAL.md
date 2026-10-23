@@ -25,7 +25,7 @@ rotina automática fica registrada na seção de validação ao final deste docu
 | `consultar_cfop` | `cfop`, como `1403` ou `1.403` | Descrição oficial, entrada/saída, âmbito e referência |
 | `validar_chave_nfe` | `chave`, com 44 dígitos; aceita espaços | Formato numérico e dígito verificador |
 | `validar_cst` | `cst` e `tributo` | Descrição na tabela correta e situação do código |
-| `consultar_cest` | `cest`, como `0100700` ou `01.007.00` | Descrição, texto NCM/SH oficial, situação e referência |
+| `consultar_cest` | `cest`, ou `descricao` e/ou `ncm`; modalidade de venda opcional | Consulta exata ou até três candidatos com condições e referência |
 
 Tributos aceitos: `ICMS`, `CSOSN`, `IPI`, `PIS` e `COFINS`.
 ICMS aceita dois dígitos de CST ou três no formato origem+CST. CSOSN exige três;
@@ -259,3 +259,35 @@ Isso exigirá definir máquina disponível, agendamento e autenticação restrit
 
 Na Tina, usar Servidores MCP (não a seção OpenAPI). Nome sugerido: fiscal_ats. URL e cabeçalhos constam na seção 10.
 Primeiro cadastrar o AUTH_TOKEN da Netlify como segredo MCP_FISCAL_TOKEN, testar conexão e conferir as quatro ferramentas. A Tina ainda não foi alterada.
+
+Atualização da decisão de infraestrutura: o responsável prefere manter toda a rotina na nuvem; não instalar atualização em computador local.
+Uma função de ponte em prévia da Netlify também falhou ao buscar o documento CEST (HTTP 502). Não foi publicada em produção nem anunciada à Tina. O código experimental foi removido do diretório de funções.
+A seleção de região São Paulo na Netlify é restrita a Pro/Enterprise na documentação atual: https://docs.netlify.com/build/functions/configuration/#region
+Próxima alternativa em avaliação: coleta por Cloudflare Workers, condicionada a acesso à conta e teste real de conectividade. Ainda não validada nem implantada.
+
+## 14. Busca de CEST por produto ou NCM
+
+A mesma ferramenta consultar_cest agora aceita descricao (até 120 caracteres) ou ncm completo (8 dígitos, pontuado ou não). Ambos podem ser combinados para restringir a busca. A consulta por cest conhecido continua compatível e deve ser usada sozinha.
+
+A busca remove acentos, reconhece xampu/xampus/shampoo/shampoos e procura termos na descrição oficial. Não utiliza modelo de IA nem classifica NCM. O NCM informado deve ser conferido na ferramenta Siscomex já utilizada.
+Retorna no máximo três candidatos, total de correspondências, indicação de outros resultados e perguntas para esclarecer a escolha, em menos de 3 KB nos testes. Exclui registros revogados, futuros, expirados e associações NCM/SH que exigem revisão. Posições SH parciais geram candidatos por prefixo, sempre sujeitos à descrição do anexo.
+
+O exemplo xampu encontra 20.017.00 e 28.011.00, ambos com descrição Xampus para o cabelo e NCM 3305.10.00. O segundo pertence ao segmento de venda pelo sistema porta a porta (Anexo XXVI). A resposta pede confirmação do NCM e do sistema de venda; não escolhe pelo primeiro resultado.
+O parâmetro modalidade_venda aceita porta_a_porta ou outras, somente após confirmação do usuário. Não determina aplicação de ST nem alíquota.
+
+Exemplos de argumentos:
+
+- descricao: xampu
+- ncm: 33051000
+- descricao: xampu; ncm: 33051000; modalidade_venda: outras
+
+Validação: nove testes passaram, incluindo compatibilidade com consulta por código, aliases de xampu, ambiguidades de segmento, NCM parcial, filtros combinados, ausência de correspondência, parâmetros inválidos e limites de contexto.
+Os nomes das quatro ferramentas permanecem iguais. Não é necessário acrescentar nome ao filtro fiscal_ats. Conferir a nova descrição no botão Testar conexão da Tina antes de testar no atendimento. Nenhum prompt, segredo ou configuração da Tina foi alterado por esta implementação.
+CFOP e CST/CSOSN continuam em consulta por código; recomendação contextual dessas operações ainda não foi implementada.
+
+### Busca por aproximação
+
+Além de acentos, sinônimos e plurais, a busca aceita erros de digitação e transposição de letras. A comparação aproximada só é aplicada a palavras com pelo menos cinco letras, com até uma edição (duas em termos com sete ou mais letras). Não aproxima NCM nem CEST e não descarta qualificadores como sem/com.
+São preservados somente os resultados com a melhor distância encontrada. O retorno identifica correspondencia como termos ou aproximada, mantém a descrição oficial e as condições a confirmar. Limite: três candidatos e resultados abaixo de 3 KB nos testes.
+Exemplos verificados: xampuu e xmapu encontram xampus; condiconador encontra condicionadores. A busca de sabonete usa a expressão sabão de toucador para evitar misturar produtos para lavar roupa.
+Isso é recuperação lexical de candidatos, não um classificador semântico completo nem certificação de aplicação fiscal.
