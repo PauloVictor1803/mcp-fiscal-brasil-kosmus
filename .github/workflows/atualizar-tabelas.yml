@@ -1,0 +1,37 @@
+name: Atualizar tabelas oficiais
+on:
+  push:
+    branches: [main]
+    paths: ['scripts/atualizar_tabelas_oficiais.py', '.github/workflows/atualizar-tabelas.yml']
+  schedule:
+    - cron: '23 9 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: tabelas-oficiais
+  cancel-in-progress: false
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: pip install requests==2.32.5 beautifulsoup4==4.14.3 pypdf==6.19.0
+      - name: Reconstruir e validar antes de substituir
+        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download
+      - run: node --test netlify-mcp/test/mcp.test.js
+      - name: Registrar referência validada
+        run: |
+          if git diff --quiet -- netlify-mcp/data/tabelas.json; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add netlify-mcp/data/tabelas.json
+          git commit -m 'Atualiza referência das tabelas oficiais'
+          git push
