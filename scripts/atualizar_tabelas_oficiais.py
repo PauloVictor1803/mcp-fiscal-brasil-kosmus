@@ -12,6 +12,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import time
 
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
@@ -31,8 +32,17 @@ def clean(text):
 def download(directory):
     def fetch(item):
         name, url = item
-        response = requests.get(url, timeout=55)
-        response.raise_for_status()
+        for attempt in range(3):
+            print(f'Baixando {name}, tentativa {attempt + 1}/3', flush=True)
+            try:
+                response = requests.get(url, timeout=(12, 55))
+                response.raise_for_status()
+                break
+            except (requests.ConnectionError, requests.Timeout) as error:
+                print(f'Falha de rede em {name}: {type(error).__name__}', flush=True)
+                if attempt == 2:
+                    raise
+                time.sleep(2 ** attempt)
         payload = response.content
         if len(payload) < 20000: raise ValueError(f'Fonte muito pequena: {name}')
         if name.endswith('.pdf') and not payload.startswith(b'%PDF'): raise ValueError('PDF inválido')
