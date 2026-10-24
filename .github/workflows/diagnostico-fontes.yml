@@ -1,0 +1,40 @@
+name: Diagnostico individual CONFAZ
+on:
+  push:
+    branches: [diagnostico/fontes-individuais]
+    paths: ['.github/workflows/diagnostico-fontes.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fontes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Consultar uma fonte de cada vez
+        shell: python
+        run: |
+          import urllib.request, urllib.error, json, time
+          base = 'https://ats-fontes-oficiais-teste.paulo-magalhaes.workers.dev/'
+          results = []
+          for fonte in ['cfop', 'icms', 'moc', 'cest']:
+              url = base + '?fonte=' + fonte + '&formato=arquivo'
+              start = time.monotonic()
+              print('INICIO ' + fonte, flush=True)
+              try:
+                  with urllib.request.urlopen(url, timeout=65) as response:
+                      body = response.read()
+                      result = {'fonte': fonte, 'http': response.status, 'bytes': len(body), 'cf_ray': response.headers.get('CF-Ray'), 'origem': response.headers.get('X-Official-Source'), 'sha256': response.headers.get('X-Source-SHA256')}
+              except urllib.error.HTTPError as error:
+                  result = {'fonte': fonte, 'http': error.code, 'cf_ray': error.headers.get('CF-Ray'), 'erro': error.read().decode('utf-8', errors='replace')[:2000]}
+              except Exception as error:
+                  result = {'fonte': fonte, 'erro': type(error).__name__ + ': ' + str(error)}
+              result['segundos'] = round(time.monotonic() - start, 2)
+              results.append(result)
+              print('RESULTADO ' + json.dumps(result, ensure_ascii=False), flush=True)
+          print('RESUMO ' + json.dumps(results, ensure_ascii=False), flush=True)
+          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Fontes consultadas sequencialmente\n\n')
+              summary.write('| Fonte | HTTP | Tempo (s) |\n|---|---|---|\n')
+              for result in results:
+                  summary.write('| ' + result['fonte'] + ' | ' + str(result.get('http', 'erro')) + ' | ' + str(result['segundos']) + ' |\n')
