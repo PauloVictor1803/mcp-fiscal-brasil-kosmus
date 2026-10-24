@@ -11,7 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - run: python -m pip install requests==2.32.5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3 pypdf==6.19.0
       - name: Consultar uma fonte de cada vez
         shell: python
         run: |
@@ -46,3 +53,9 @@ jobs:
               summary.write('| Fonte | HTTP | Tempo (s) |\n|---|---|---|\n')
               for result in results:
                   summary.write('| ' + result['fonte'] + ' | ' + str(result.get('http', 'erro')) + ' | ' + str(result['segundos']) + ' |\n')
+      - name: Reconstruir tabelas com as quatro fontes
+        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download --via-cloudflare
+      - name: Testar importador e MCP
+        run: |
+          python scripts/test_coleta_oficial.py
+          node --test netlify-mcp/test/mcp.test.js cloudflare-fontes/worker.test.js

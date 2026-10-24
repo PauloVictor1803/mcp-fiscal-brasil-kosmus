@@ -6,7 +6,7 @@ Dependências de manutenção: requests, beautifulsoup4, pypdf (não usadas em p
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -36,17 +36,26 @@ def download(directory, via_cloudflare=False):
         name, url = item
         for attempt in range(3):
             print(f'Baixando {name}, tentativa {attempt + 1}/3', flush=True)
+            start = time.monotonic()
             try:
                 response = requests.get(RELAY_URL if via_cloudflare else url,
                     params={'fonte':RELAY_NAMES[name], 'formato':'arquivo'} if via_cloudflare else None,
                     timeout=(12, 55), allow_redirects=False)
+                record = {'fonte':name, 'tentativa':attempt+1, 'http':response.status_code,
+                    'bytes':len(response.content), 'segundos':round(time.monotonic()-start,3),
+                    'diagnostico':response.headers.get('X-Source-Diagnostics')}
+                if response.status_code != 200:
+                    record['erro'] = response.text[:1500]
+                print('COLETA ' + json.dumps(record,ensure_ascii=False),flush=True)
                 response.raise_for_status()
                 if response.status_code != 200:
                     raise ValueError(f'Resposta inesperada da fonte: {name}')
                 break
-            except (requests.ConnectionError, requests.Timeout) as error:
-                print(f'Falha de rede em {name}: {type(error).__name__}', flush=True)
-                if attempt == 2:
+            except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as error:
+                status = error.response.status_code if isinstance(error,requests.HTTPError) and error.response is not None else None
+                print(json.dumps({'fonte':name,'tentativa':attempt+1,'erro':type(error).__name__,
+                    'http':status,'segundos':round(time.monotonic()-start,3)},ensure_ascii=False),flush=True)
+                if attempt == 2 or (status is not None and status not in [408,425,429,500,502,503,504]):
                     raise
                 time.sleep(2 ** attempt)
         payload = response.content
@@ -58,8 +67,18 @@ def download(directory, via_cloudflare=False):
         if len(payload) < 20000: raise ValueError(f'Fonte muito pequena: {name}')
         if name.endswith('.pdf') and not payload.startswith(b'%PDF'): raise ValueError('PDF inválido')
         (directory / name).write_bytes(payload)
+        return {'fonte':name, 'ok':True, 'bytes':len(payload)}
+    results = []
     with ThreadPoolExecutor(max_workers=3) as pool:
-        list(pool.map(fetch, URLS.items()))
+        futures = {pool.submit(fetch,item):item[0] for item in URLS.items()}
+        for future in as_completed(futures):
+            try: results.append(future.result())
+            except Exception as error:
+                results.append({'fonte':futures[future],'ok':False,'erro':str(error)[:1500]})
+    print('RESUMO_COLETA ' + json.dumps(results,ensure_ascii=False),flush=True)
+    failures = [r['fonte'] for r in results if not r['ok']]
+    if failures:
+        raise RuntimeError('Coleta incompleta; tabela anterior preservada. Fontes: ' + ', '.join(sorted(failures)))
 
 def soup(directory, name):
     document = BeautifulSoup((directory / name).read_text(encoding='utf-8'), 'html.parser')
