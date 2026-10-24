@@ -291,3 +291,15 @@ Além de acentos, sinônimos e plurais, a busca aceita erros de digitação e tr
 São preservados somente os resultados com a melhor distância encontrada. O retorno identifica correspondencia como termos ou aproximada, mantém a descrição oficial e as condições a confirmar. Limite: três candidatos e resultados abaixo de 3 KB nos testes.
 Exemplos verificados: xampuu e xmapu encontram xampus; condiconador encontra condicionadores. A busca de sabonete usa a expressão sabão de toucador para evitar misturar produtos para lavar roupa.
 Isso é recuperação lexical de candidatos, não um classificador semântico completo nem certificação de aplicação fiscal.
+
+## 15. Ponte Cloudflare para coleta oficial — 23/10/2026
+
+O Worker ats-fontes-oficiais-teste conseguiu obter os quatro documentos do CONFAZ: HTTP 200 em todos, com hashes idênticos às referências oficiais validadas. Endpoint: https://ats-fontes-oficiais-teste.paulo-magalhaes.workers.dev/
+
+O MCP permanece na Netlify; não houve migração do atendimento nem alteração na Tina. A ponte entrega somente os quatro documentos públicos de uma lista fixa. Não aceita URL arbitrária, não recebe dados cadastrais nem credenciais de clientes e mantém cache de até uma hora.
+
+O GitHub Actions executa o importador com --download --via-cloudflare. Ele confere o cabeçalho de origem e o SHA-256 recebido, reconstrói as tabelas, valida conteúdo/vigência e executa nove testes MCP mais três testes da ponte. Somente depois grava o JSON. A origem documental continua sendo o CONFAZ; coleta_via registra a ponte separadamente.
+
+Não há deploy diário na Netlify. O horário continua 06h23 de Brasília. Uma execução inicial no GitHub será usada para confirmar a cadeia inteira, incluindo a gravação do arquivo. Falhas preservam a referência anterior.
+
+Fonte do Worker e testes: cloudflare-fontes/. O código publicado pela interface da Cloudflare foi validado por consultas reais. O modo de redirecionamento é manual, compatível com Workers.

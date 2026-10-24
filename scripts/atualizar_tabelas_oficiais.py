@@ -25,18 +25,24 @@ URLS = {
     'sinief_atual.html': 'https://www.confaz.fazenda.gov.br/legislacao/ajustes/sinief/cvsn_70',
     'moc.pdf': 'https://www.confaz.fazenda.gov.br/legislacao/arquivo-manuais/moc7-anexo-i-leiaute-e-rv.pdf',
 }
+RELAY_URL = 'https://ats-fontes-oficiais-teste.paulo-magalhaes.workers.dev/'
+RELAY_NAMES = {'cest.html':'cest', 'cfop_consolidado.html':'cfop', 'sinief_atual.html':'icms', 'moc.pdf':'moc'}
 
 def clean(text):
     return re.sub(r'\s+', ' ', text.replace('\xa0', ' ')).strip()
 
-def download(directory):
+def download(directory, via_cloudflare=False):
     def fetch(item):
         name, url = item
         for attempt in range(3):
             print(f'Baixando {name}, tentativa {attempt + 1}/3', flush=True)
             try:
-                response = requests.get(url, timeout=(12, 55))
+                response = requests.get(RELAY_URL if via_cloudflare else url,
+                    params={'fonte':RELAY_NAMES[name], 'formato':'arquivo'} if via_cloudflare else None,
+                    timeout=(12, 55), allow_redirects=False)
                 response.raise_for_status()
+                if response.status_code != 200:
+                    raise ValueError(f'Resposta inesperada da fonte: {name}')
                 break
             except (requests.ConnectionError, requests.Timeout) as error:
                 print(f'Falha de rede em {name}: {type(error).__name__}', flush=True)
@@ -44,6 +50,11 @@ def download(directory):
                     raise
                 time.sleep(2 ** attempt)
         payload = response.content
+        if via_cloudflare:
+            if response.headers.get('X-Official-Source') != url:
+                raise ValueError(f'Origem da ponte não confere: {name}')
+            if response.headers.get('X-Source-SHA256') != hashlib.sha256(payload).hexdigest():
+                raise ValueError(f'Hash da ponte não confere: {name}')
         if len(payload) < 20000: raise ValueError(f'Fonte muito pequena: {name}')
         if name.endswith('.pdf') and not payload.startswith(b'%PDF'): raise ValueError('PDF inválido')
         (directory / name).write_bytes(payload)
@@ -224,12 +235,17 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--fontes-dir', type=Path, required=True)
     parser.add_argument('--download', action='store_true')
+    parser.add_argument('--via-cloudflare', action='store_true', help='Coleta pela ponte fixa da ATS, mantendo fontes oficiais e hashes')
     parser.add_argument('--data', default=datetime.now(timezone.utc).date().isoformat())
     args = parser.parse_args()
     args.fontes_dir.mkdir(parents=True, exist_ok=True)
-    if args.download: download(args.fontes_dir)
+    if args.via_cloudflare and not args.download:
+        parser.error('--via-cloudflare exige --download')
+    if args.download: download(args.fontes_dir, args.via_cloudflare)
     reference = datetime.strptime(args.data, '%Y-%m-%d').date()
     result = rebuild(args.fontes_dir, reference)
+    if args.via_cloudflare:
+        result['metadata']['coleta_via'] = RELAY_URL
     target = ROOT / 'netlify-mcp/data/tabelas.json'
     temporary = target.with_suffix('.tmp')
     temporary.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
