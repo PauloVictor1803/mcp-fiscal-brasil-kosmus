@@ -2,14 +2,14 @@ name: Diagnostico individual CONFAZ
 on:
   push:
     branches: [diagnostico/fontes-individuais]
-    paths: ['.github/workflows/diagnostico-fontes.yml']
+    paths: ['.github/workflows/diagnostico-fontes.yml', 'scripts/diagnosticar_fontes.py']
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   fontes:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 12
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
@@ -19,43 +19,26 @@ jobs:
         with:
           node-version: '22'
       - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3 pypdf==6.19.0
-      - name: Consultar uma fonte de cada vez
-        shell: python
-        run: |
-          import requests, json, time, hashlib
-          base = 'https://ats-fontes-oficiais-teste.paulo-magalhaes.workers.dev/'
-          expected = {'cest':'7c2bdc9db1ceb11faaa56b2582e77e5a1bcb66e51cd62b6de0f155a78359c45a','cfop':'51d12b7f9e1c2f08b9665a06875a64737726ce4a633138f437a90e431eb659e0','icms':'7eeb4e45976812c2951d190c158b6d2da77c282e115376f620e2a74c5527d190','moc':'5eb4cf2010b10b0b62f78197c4eb64025f24535d4c6e61158bc7806dd008f55d'}
-          results = []
-          for fonte in ['cfop', 'icms', 'moc', 'cest']:
-              start = time.monotonic()
-              print('INICIO ' + fonte, flush=True)
-              try:
-                  response = requests.get(base, params={'fonte': fonte, 'formato': 'arquivo', 'nocache': '1'}, timeout=(12,75), allow_redirects=False)
-                  result = {'fonte': fonte, 'http': response.status_code, 'bytes': len(response.content), 'cf_ray': response.headers.get('CF-Ray'), 'origem': response.headers.get('X-Official-Source'), 'sha256': response.headers.get('X-Source-SHA256')}
-                  result['placement_resposta'] = response.headers.get('cf-placement')
-                  result['diagnostico'] = response.headers.get('X-Source-Diagnostics')
-                  if response.status_code == 200:
-                      sha = hashlib.sha256(response.content).hexdigest()
-                      result['hash_corpo'] = sha
-                      result['hash_igual_referencia'] = sha == expected[fonte]
-                      result['hash_igual_cabecalho'] = sha == result['sha256']
-                      result['formato_valido'] = response.content.startswith(b'%PDF') if fonte == 'moc' else b'<html' in response.content[:1000].lower() or b'<!doctype' in response.content[:1000].lower()
-                  if response.status_code != 200:
-                      result['erro'] = response.text[:2000]
-              except Exception as error:
-                  result = {'fonte': fonte, 'erro': type(error).__name__ + ': ' + str(error)}
-              result['segundos'] = round(time.monotonic() - start, 2)
-              results.append(result)
-              print('RESULTADO ' + json.dumps(result, ensure_ascii=False), flush=True)
-          print('RESUMO ' + json.dumps(results, ensure_ascii=False), flush=True)
-          with open(__import__('os').environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
-              summary.write('## Fontes consultadas sequencialmente\n\n')
-              summary.write('| Fonte | HTTP | Tempo (s) |\n|---|---|---|\n')
-              for result in results:
-                  summary.write('| ' + result['fonte'] + ' | ' + str(result.get('http', 'erro')) + ' | ' + str(result['segundos']) + ' |\n')
-      - name: Reconstruir tabelas com as quatro fontes
-        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download --via-cloudflare
-      - name: Testar importador e MCP
+      - name: Testes locais sem publicar dados
         run: |
           python scripts/test_coleta_oficial.py
           node --test netlify-mcp/test/mcp.test.js cloudflare-fontes/worker.test.js
+      - name: Medir fontes sem cache e comparar cache do MOC
+        id: diagnostico
+        continue-on-error: true
+        run: python scripts/diagnosticar_fontes.py
+      - name: Reconstruir com as quatro fontes sem publicar
+        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download --via-cloudflare
+      - name: Verificar tabelas reconstruidas
+        run: node --test netlify-mcp/test/mcp.test.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostico-fontes
+          path: diagnostico-fontes-resultado.json
+          if-no-files-found: warn
+      - name: Nao ocultar falhas do diagnostico sem cache
+        if: always()
+        env:
+          OUTCOME: ${{ steps.diagnostico.outcome }}
+        run: test "$OUTCOME" = "success"

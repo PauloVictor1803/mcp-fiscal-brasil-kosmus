@@ -31,6 +31,23 @@ RELAY_NAMES = {'cest.html':'cest', 'cfop_consolidado.html':'cfop', 'sinief_atual
 def clean(text):
     return re.sub(r'\s+', ' ', text.replace('\xa0', ' ')).strip()
 
+def telemetry(response):
+    diagnostic = {}
+    try:
+        if response.headers.get('X-Source-Diagnostics'):
+            diagnostic = json.loads(response.headers['X-Source-Diagnostics'])
+        elif response.status_code == 502:
+            diagnostic = response.json()
+    except (ValueError, requests.JSONDecodeError):
+        pass
+    if not isinstance(diagnostic,dict): diagnostic = {}
+    return {'worker_cache':response.headers.get('X-Worker-Cache'),
+        'fetched_at':response.headers.get('X-Fetched-At'),
+        'cf_placement':response.headers.get('cf-placement'),
+        'cf_ray':response.headers.get('CF-Ray'),
+        'origem_cf_cache':diagnostic.get('origem_cf_cache'),
+        'diagnostico':diagnostic}
+
 def download(directory, via_cloudflare=False):
     def fetch(item):
         name, url = item
@@ -43,7 +60,7 @@ def download(directory, via_cloudflare=False):
                     timeout=(12, 55), allow_redirects=False)
                 record = {'fonte':name, 'tentativa':attempt+1, 'http':response.status_code,
                     'bytes':len(response.content), 'segundos':round(time.monotonic()-start,3),
-                    'diagnostico':response.headers.get('X-Source-Diagnostics')}
+                    'timestamp_utc':datetime.now(timezone.utc).isoformat(), **telemetry(response)}
                 if response.status_code != 200:
                     record['erro'] = response.text[:1500]
                 print('COLETA ' + json.dumps(record,ensure_ascii=False),flush=True)
@@ -67,7 +84,7 @@ def download(directory, via_cloudflare=False):
         if len(payload) < 20000: raise ValueError(f'Fonte muito pequena: {name}')
         if name.endswith('.pdf') and not payload.startswith(b'%PDF'): raise ValueError('PDF inválido')
         (directory / name).write_bytes(payload)
-        return {'fonte':name, 'ok':True, 'bytes':len(payload)}
+        return {'fonte':name, 'ok':True, 'tentativas':attempt+1, 'bytes':len(payload), **telemetry(response)}
     results = []
     with ThreadPoolExecutor(max_workers=3) as pool:
         futures = {pool.submit(fetch,item):item[0] for item in URLS.items()}

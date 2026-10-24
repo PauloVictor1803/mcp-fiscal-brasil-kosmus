@@ -14,6 +14,16 @@ def response(url, status=200):
     return r
 
 class ColetaTest(unittest.TestCase):
+    def test_telemetria_cache_e_erro_sem_inferir_origem(self):
+        r=response('https://teste')
+        r.headers.update({'X-Worker-Cache':'HIT','X-Fetched-At':'2026-10-23T10:00:00Z','X-Source-Diagnostics':'{"origem_http":null,"coleta_anterior":{"origem_http":200}}'})
+        meta=coletor.telemetry(r)
+        self.assertEqual(meta['worker_cache'],'HIT');self.assertIsNone(meta['diagnostico']['origem_http'])
+        r=response('https://teste',502);r._content=b'{"origem_http":522,"origem_bytes":16}'
+        self.assertEqual(coletor.telemetry(r)['diagnostico']['origem_http'],522)
+        r._content=b'nao e JSON'
+        self.assertEqual(coletor.telemetry(r)['diagnostico'],{})
+
     def test_falha_permanente_nao_esconde_demais_fontes(self):
         calls=[]
         def get(url,**kwargs):
