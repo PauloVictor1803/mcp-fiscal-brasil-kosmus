@@ -1,0 +1,37 @@
+name: Monitorar atualização CONFAZ
+on:
+  workflow_run:
+    workflows: ['Atualizar tabelas oficiais']
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '47 15 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['scripts/monitorar_coleta.cjs', 'scripts/monitorar_coleta.test.cjs', '.github/workflows/monitorar-coleta.yml']
+permissions:
+  contents: read
+  actions: read
+  issues: write
+concurrency:
+  group: monitor-confaz
+  cancel-in-progress: false
+jobs:
+  monitorar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: node --test scripts/monitorar_coleta.test.cjs
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const monitor = require('./scripts/monitorar_coleta.cjs');
+            await monitor({github, context, core});
