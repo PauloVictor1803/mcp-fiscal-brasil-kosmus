@@ -12056,7 +12056,7 @@
   },
   "metadata": {
     "validacao": "aprovada",
-    "data_referencia": "2026-10-23",
+    "data_referencia": "2026-10-24",
     "natureza": "consulta de referência documental; não define enquadramento tributário",
     "fontes": {
       "cest.html": {
@@ -12086,6 +12086,7 @@
       "CST_PIS": 33,
       "CST_COFINS": 33
     },
-    "ncm": "Utilizar a consulta Siscomex existente; sem tabela NCM substituta."
+    "ncm": "Utilizar a consulta Siscomex existente; sem tabela NCM substituta.",
+    "coleta_via": "https://ats-fontes-oficiais-teste.paulo-magalhaes.workers.dev/"
   }
 }
