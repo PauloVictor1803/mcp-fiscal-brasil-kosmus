@@ -2,6 +2,10 @@
 
 Atualizado em 24/10/2026. Este documento distingue resultados comprovados de etapas ainda em teste.
 
+## Atualização dos testes da Tina em 24/10/2026
+
+Leia [o relatório de seis cenários](../../docs/operacao-ats/TESTES-TINA-2026-10-24.md): 6/6 aprovações automáticas, uma execução por cenário, custo de US$ 0,02325466. Há ressalvas de revisão humana e o contexto por idATS ainda não foi comprovado. Os testes posteriores não alteraram o agente; seguem na v53. Não comparar diretamente esse placar com as rodadas anteriores, que usavam outros casos e repetições.
+
 ## Estado comprovado
 
 - [PR 5](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/pull/5) integrado no commit `0bc64313c49f710924f601903e417a19d08150da`: monitor, dependências corrigidas e documentação.
@@ -68,7 +72,7 @@ A busca NCM é uma ferramenta HTTP separada. O erro observado era a barra final:
 
 A versão ativa também acrescenta orientação para consultar a base ATS antes de recomendar enquadramento, conferir os códigos e pedir somente o contexto determinante. Descrição de código não valida aplicação; IE isenta não define CST/CSOSN; consulta de CNPJ não distingue automaticamente Lucro Real de Presumido; CEST não determina ST; dígito da chave não confirma autorização.
 
-Casos de regressão: NCM por nome, CEST com modalidade de venda, Simples com IE isenta e devolução de compra. Comparação da antiga v51 com a v53 em três repetições por caso, incluindo a regressão preexistente de IE: v51 aprovou 2/5; v53 aprovou 3/5, com `piorou=false` no console. NCM, CEST e Simples/IE isenta passaram nas três repetições. A v53 foi ativada em 24/10/2026 às 14h04 UTC, sem forçar bloqueio, e a leitura posterior confirmou a versão ativa. A avaliação de IE de fornecedor e a de devolução de compra continuam reprovadas; não são consideradas resolvidas. Os exemplos de devolução consultaram a base, mas a avaliação continuou reprovando, portanto é necessário revisar tanto as evidências operacionais quanto o critério do avaliador. O exemplo de IE ainda antecipou preenchimento de zeros: exige correção específica na base/orientação. Não publicar conversas, CNPJ de clientes, tickets ou configurações completas neste repositório.
+Casos de regressão: NCM por nome, CEST com modalidade de venda, Simples com IE isenta e devolução de compra. Comparação da antiga v51 com a v53 em três repetições por caso, incluindo a regressão preexistente de IE: v51 aprovou 2/5; v53 aprovou 3/5, com `piorou=false` no console. NCM, CEST e Simples/IE isenta passaram nas três repetições. A v53 foi ativada em 24/10/2026 às 14h04 UTC, sem forçar bloqueio, e a leitura posterior confirmou a versão ativa. A avaliação de IE de fornecedor e a de devolução de compra continuam reprovadas; não são consideradas resolvidas. Os exemplos de devolução consultaram a base, mas a avaliação continuou reprovando, portanto é necessário revisar tanto as evidências operacionais quanto o critério do avaliador. A conclusão inicial sobre zeros foi revista: Paulo confirmou que completar conforme a UF e o retorno da consulta faz parte da validação do Resulth, e a base documenta esse ajuste e o parâmetro Bloqueia/Avisa. O simples complemento não comprova erro. Um lote posterior de seis cenários aprovou todos os critérios automáticos, com ressalvas descritas no relatório atualizado. Não publicar conversas, CNPJ de clientes, tickets ou configurações completas neste repositório.
 
 ## Dependências Python herdadas
 
@@ -80,8 +84,8 @@ Validação no GitHub: [CI](https://github.com/PauloVictor1803/mcp-fiscal-brasil
 
 ## Pendências de comprovação
 
-- Corrigir a orientação preexistente de IE de fornecedor; não completar zeros por suposição.
-- Investigar a reprovação da avaliação de devolução de compra, conferindo a aderência da resposta às páginas recuperadas e a qualidade do critério.
+- Conferir a aderência ao retorno real da consulta de IE e a UF do fornecedor. Zeros conforme a UF e o retorno informado são permitidos; não confundir isso com inventar inscrição.
+- Investigar variação das respostas de devolução entre execuções, a frase truncada e o comentário sobre preço ainda sem fonte identificada nas páginas conferidas. As duas etapas de devolução passaram no lote posterior de seis cenários, sem alteração de configuração.
 - Confirmar a próxima execução agendada com o código atualizado.
 - Acompanhar a intermitência do CONFAZ em dias e horários distintos.
 
