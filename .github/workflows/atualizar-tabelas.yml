@@ -13,8 +13,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   atualizar:
-    # macOS usa uma rede distinta da Azure usada pelo Ubuntu.
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
@@ -26,8 +25,8 @@ jobs:
           node-version: '22'
       - run: pip install requests==2.32.5 beautifulsoup4==4.14.3 pypdf==6.19.0
       - name: Reconstruir e validar antes de substituir
-        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download
-      - run: node --test netlify-mcp/test/mcp.test.js
+        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download --via-cloudflare
+      - run: node --test netlify-mcp/test/mcp.test.js cloudflare-fontes/worker.test.js
       - name: Registrar referência validada
         run: |
           if git diff --quiet -- netlify-mcp/data/tabelas.json; then exit 0; fi
