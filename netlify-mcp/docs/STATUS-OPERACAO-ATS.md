@@ -4,6 +4,8 @@ Atualizado em 24/10/2026. Este documento distingue resultados comprovados de eta
 
 ## Estado comprovado
 
+- [PR 5](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/pull/5) integrado no commit `0bc64313c49f710924f601903e417a19d08150da`: monitor, dependências corrigidas e documentação.
+- [Monitor em produção](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40100613767): execução concluída com sucesso após a integração.
 - [PR 4](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/pull/4) integrado no commit `7b9b2b6627dbedaee101fc80ffcefdc5e092dc60`.
 - [Atualização após a integração](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40099628869): quatro fontes coletadas e validadas, 15 testes Node aprovados. Nesta execução os documentos vieram do cache do Worker; isso não é prova de uma nova conexão à origem.
 - [Execução agendada anterior à integração](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40097967448): sucesso. Confirma o agendamento existente, mas ainda não uma execução agendada com todas as alterações posteriores.
@@ -62,11 +64,11 @@ Em falha persistente, confira fonte, status de origem, bytes, remote-GRU, cache 
 
 A conexão do MCP fiscal à Tina já existe. O prefixo é `fiscal_ats`; os nomes originais das quatro ferramentas permanecem compatíveis.
 
-A busca NCM é uma ferramenta HTTP separada. O erro observado era a barra final: `/api/ncm/v1/?search=xampu` respondia com redirecionamento. O rascunho v52 usa servidor `https://brasilapi.com.br/api/ncm` e caminhos `/v1` e `/v1/{codigo}`. Teste direto sem seguir redirecionamento: nome xampu, nome computador e código 33051000 retornaram HTTP 200. A BrasilAPI é o intermediário consultado; não deve ser descrita como conexão direta da Tina ao Siscomex.
+A busca NCM é uma ferramenta HTTP separada. O erro observado era a barra final: `/api/ncm/v1/?search=xampu` respondia com redirecionamento. A versão ativa v53 usa servidor `https://brasilapi.com.br/api/ncm` e caminhos `/v1` e `/v1/{codigo}`. Teste direto sem seguir redirecionamento: nome xampu, nome computador e código 33051000 retornaram HTTP 200. A BrasilAPI é o intermediário consultado; não deve ser descrita como conexão direta da Tina ao Siscomex.
 
-O rascunho também acrescenta orientação para consultar a base ATS antes de recomendar enquadramento, conferir os códigos e pedir somente o contexto determinante. Descrição de código não valida aplicação; IE isenta não define CST/CSOSN; consulta de CNPJ não distingue automaticamente Lucro Real de Presumido; CEST não determina ST; dígito da chave não confirma autorização.
+A versão ativa também acrescenta orientação para consultar a base ATS antes de recomendar enquadramento, conferir os códigos e pedir somente o contexto determinante. Descrição de código não valida aplicação; IE isenta não define CST/CSOSN; consulta de CNPJ não distingue automaticamente Lucro Real de Presumido; CEST não determina ST; dígito da chave não confirma autorização.
 
-Casos de regressão: NCM por nome, CEST com modalidade de venda, Simples com IE isenta e devolução de compra. Comparação da versão ativa v51 e do rascunho v52 com três repetições por caso, incluindo a regressão preexistente de IE. **Na redação inicial deste documento, os testes da Tina ainda estão em andamento e a v52 não está ativa.** Não publicar conversas, CNPJ de clientes, tickets ou configurações completas neste repositório.
+Casos de regressão: NCM por nome, CEST com modalidade de venda, Simples com IE isenta e devolução de compra. Comparação da antiga v51 com a v53 em três repetições por caso, incluindo a regressão preexistente de IE: v51 aprovou 2/5; v53 aprovou 3/5, com `piorou=false` no console. NCM, CEST e Simples/IE isenta passaram nas três repetições. A v53 foi ativada em 24/10/2026 às 14h04 UTC, sem forçar bloqueio, e a leitura posterior confirmou a versão ativa. A avaliação de IE de fornecedor e a de devolução de compra continuam reprovadas; não são consideradas resolvidas. Os exemplos de devolução consultaram a base, mas a avaliação continuou reprovando, portanto é necessário revisar tanto as evidências operacionais quanto o critério do avaliador. O exemplo de IE ainda antecipou preenchimento de zeros: exige correção específica na base/orientação. Não publicar conversas, CNPJ de clientes, tickets ou configurações completas neste repositório.
 
 ## Dependências Python herdadas
 
@@ -74,15 +76,24 @@ A auditoria detectou versões vulneráveis no `uv.lock` do projeto Python origin
 
 A atualização proposta mantém FastMCP 3 e MCP 1, atualiza o lockfile e exige Python 3.11 ou superior: versões corrigidas de Pillow, Filelock e Virtualenv eliminam os fallbacks antigos de Python 3.10. A matriz de CI passa a 3.11/3.12/3.13. Isso é uma alteração de compatibilidade do pacote Python herdado, não uma mudança de hospedagem.
 
-A aprovação depende do scanner e da CI da alteração; resolver o lockfile localmente não basta. O scanner não foi desativado e nenhuma exceção nova foi criada.
+Validação no GitHub: [CI](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40100439933) passou em Python 3.11/3.12/3.13, com 688 testes por execução, lint, formatação e tipos. O job fiscal ATS passou em quatro testes Python e 20 Node. [Auditoria OSV](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/actions/runs/40100439945) passou: 151 pacotes examinados, quatro vulnerabilidades filtradas pelas exceções herdadas, sem novos alertas não excepcionados. Isso não significa ausência absoluta de vulnerabilidades. CodeQL e Netlify MCP também passaram. A CI e auditoria da main passaram novamente após integrar. O scanner não foi desativado e nenhuma exceção nova foi criada.
 
 ## Pendências de comprovação
 
-- Validar o monitor executando no GitHub após integrar.
-- Conferir scanner de dependências e regressões Python antes de integrar a atualização correspondente.
-- Concluir comparação das evals da Tina e ativar somente se não houver regressão, sem forçar o bloqueio.
+- Corrigir a orientação preexistente de IE de fornecedor; não completar zeros por suposição.
+- Investigar a reprovação da avaliação de devolução de compra, conferindo a aderência da resposta às páginas recuperadas e a qualidade do critério.
 - Confirmar a próxima execução agendada com o código atualizado.
 - Acompanhar a intermitência do CONFAZ em dias e horários distintos.
+
+## Instrução contábil solicitada
+
+A instrução completa aplicada está em [INSTRUCAO-FISCAL-TINA.md](INSTRUCAO-FISCAL-TINA.md). O trecho final foi solicitado expressamente pelo Paulo:
+
+> Responda de forma breve e reafirme que a orientação fornecida não substitui nem dispensa a confirmação com a contabilidade da empresa antes da emissão ou alteração fiscal.
+
+## Workflow auxiliar herdado
+
+`Release Please` permanece falhando porque a configuração do GitHub não permite que Actions crie ou aprove pull requests. É uma automação de releases do pacote Python original, separada da coleta e do MCP. A permissão da conta não foi alterada e nenhum pacote foi publicado como parte desta manutenção. Mensagens de commits fora de Conventional Commits também aparecem nos logs, mas o erro fatal observado é a permissão de criação de PR.
 
 ## Autenticação e recuperação
 
