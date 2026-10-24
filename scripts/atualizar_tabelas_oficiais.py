@@ -48,7 +48,7 @@ def telemetry(response):
         'origem_cf_cache':diagnostic.get('origem_cf_cache'),
         'diagnostico':diagnostic}
 
-def download(directory, via_cloudflare=False):
+def download(directory, via_cloudflare=False, sem_cache=False):
     def fetch(item):
         name, url = item
         for attempt in range(3):
@@ -56,7 +56,7 @@ def download(directory, via_cloudflare=False):
             start = time.monotonic()
             try:
                 response = requests.get(RELAY_URL if via_cloudflare else url,
-                    params={'fonte':RELAY_NAMES[name], 'formato':'arquivo'} if via_cloudflare else None,
+                    params={'fonte':RELAY_NAMES[name], 'formato':'arquivo', **({'nocache':'1'} if sem_cache else {})} if via_cloudflare else None,
                     timeout=(12, 55), allow_redirects=False)
                 record = {'fonte':name, 'tentativa':attempt+1, 'http':response.status_code,
                     'bytes':len(response.content), 'segundos':round(time.monotonic()-start,3),
@@ -81,6 +81,12 @@ def download(directory, via_cloudflare=False):
                 raise ValueError(f'Origem da ponte não confere: {name}')
             if response.headers.get('X-Source-SHA256') != hashlib.sha256(payload).hexdigest():
                 raise ValueError(f'Hash da ponte não confere: {name}')
+            if sem_cache:
+                meta = telemetry(response)
+                if meta['worker_cache'] != 'BYPASS' or meta['diagnostico'].get('sem_cache') is not True:
+                    raise ValueError(f'Bypass do Worker não confirmado: {name}')
+                if meta['origem_cf_cache'] not in ['DYNAMIC','BYPASS','MISS','EXPIRED']:
+                    raise ValueError(f'Consulta sem cache da CDN não confirmada: {name}')
         if len(payload) < 20000: raise ValueError(f'Fonte muito pequena: {name}')
         if name.endswith('.pdf') and not payload.startswith(b'%PDF'): raise ValueError('PDF inválido')
         (directory / name).write_bytes(payload)
@@ -272,12 +278,15 @@ if __name__ == '__main__':
     parser.add_argument('--fontes-dir', type=Path, required=True)
     parser.add_argument('--download', action='store_true')
     parser.add_argument('--via-cloudflare', action='store_true', help='Coleta pela ponte fixa da ATS, mantendo fontes oficiais e hashes')
+    parser.add_argument('--sem-cache',action='store_true',help='Diagnóstico: ignora caches na ponte; exige --download --via-cloudflare')
     parser.add_argument('--data', default=datetime.now(timezone.utc).date().isoformat())
     args = parser.parse_args()
     args.fontes_dir.mkdir(parents=True, exist_ok=True)
     if args.via_cloudflare and not args.download:
         parser.error('--via-cloudflare exige --download')
-    if args.download: download(args.fontes_dir, args.via_cloudflare)
+    if args.sem_cache and not (args.download and args.via_cloudflare):
+        parser.error('--sem-cache exige --download --via-cloudflare')
+    if args.download: download(args.fontes_dir, args.via_cloudflare, args.sem_cache)
     reference = datetime.strptime(args.data, '%Y-%m-%d').date()
     result = rebuild(args.fontes_dir, reference)
     if args.via_cloudflare:

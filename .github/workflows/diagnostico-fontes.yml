@@ -27,8 +27,8 @@ jobs:
         id: diagnostico
         continue-on-error: true
         run: python scripts/diagnosticar_fontes.py
-      - name: Reconstruir com as quatro fontes sem publicar
-        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download --via-cloudflare
+      - name: Reconstruir sem cache com retentativas sem publicar
+        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download --via-cloudflare --sem-cache
       - name: Verificar tabelas reconstruidas
         run: node --test netlify-mcp/test/mcp.test.js
       - uses: actions/upload-artifact@v4

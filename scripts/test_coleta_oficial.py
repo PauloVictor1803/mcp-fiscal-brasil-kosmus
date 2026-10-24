@@ -14,6 +14,18 @@ def response(url, status=200):
     return r
 
 class ColetaTest(unittest.TestCase):
+    def test_modo_sem_cache_preserva_origem_e_hash(self):
+        import hashlib
+        def get(url,**kwargs):
+            self.assertEqual(kwargs['params']['nocache'],'1')
+            name=kwargs['params']['fonte']
+            filename=next(k for k,v in coletor.RELAY_NAMES.items() if v==name)
+            r=response(coletor.URLS[filename]);r.headers.update({'X-Official-Source':coletor.URLS[filename],'X-Source-SHA256':hashlib.sha256(r.content).hexdigest(),'X-Worker-Cache':'BYPASS','X-Source-Diagnostics':'{"sem_cache":true,"origem_cf_cache":"DYNAMIC"}'})
+            return r
+        with tempfile.TemporaryDirectory(dir=coletor.ROOT) as tmp,patch.object(coletor.requests,'get',side_effect=get),contextlib.redirect_stdout(io.StringIO()):
+            coletor.download(Path(tmp),True,True)
+            self.assertEqual(len(list(Path(tmp).iterdir())),4)
+
     def test_telemetria_cache_e_erro_sem_inferir_origem(self):
         r=response('https://teste')
         r.headers.update({'X-Worker-Cache':'HIT','X-Fetched-At':'2026-10-23T10:00:00Z','X-Source-Diagnostics':'{"origem_http":null,"coleta_anterior":{"origem_http":200}}'})
