@@ -1,0 +1,44 @@
+name: Diagnostico individual CONFAZ
+on:
+  push:
+    branches: [diagnostico/fontes-individuais]
+    paths: ['.github/workflows/diagnostico-fontes.yml', 'scripts/diagnosticar_fontes.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  fontes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: python -m pip install requests==2.32.5 beautifulsoup4==4.14.3 pypdf==6.19.0
+      - name: Testes locais sem publicar dados
+        run: |
+          python scripts/test_coleta_oficial.py
+          node --test netlify-mcp/test/mcp.test.js cloudflare-fontes/worker.test.js
+      - name: Medir fontes sem cache e comparar cache do MOC
+        id: diagnostico
+        continue-on-error: true
+        run: python scripts/diagnosticar_fontes.py
+      - name: Reconstruir sem cache com retentativas sem publicar
+        run: python scripts/atualizar_tabelas_oficiais.py --fontes-dir /tmp/fontes-oficiais --download --via-cloudflare --sem-cache
+      - name: Verificar tabelas reconstruidas
+        run: node --test netlify-mcp/test/mcp.test.js
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: diagnostico-fontes
+          path: diagnostico-fontes-resultado.json
+          if-no-files-found: warn
+      - name: Nao ocultar falhas do diagnostico sem cache
+        if: always()
+        env:
+          OUTCOME: ${{ steps.diagnostico.outcome }}
+        run: test "$OUTCOME" = "success"

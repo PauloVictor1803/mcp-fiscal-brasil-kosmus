@@ -6,7 +6,7 @@ Dependências de manutenção: requests, beautifulsoup4, pypdf (não usadas em p
 from __future__ import annotations
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -31,22 +31,48 @@ RELAY_NAMES = {'cest.html':'cest', 'cfop_consolidado.html':'cfop', 'sinief_atual
 def clean(text):
     return re.sub(r'\s+', ' ', text.replace('\xa0', ' ')).strip()
 
-def download(directory, via_cloudflare=False):
+def telemetry(response):
+    diagnostic = {}
+    try:
+        if response.headers.get('X-Source-Diagnostics'):
+            diagnostic = json.loads(response.headers['X-Source-Diagnostics'])
+        elif response.status_code == 502:
+            diagnostic = response.json()
+    except (ValueError, requests.JSONDecodeError):
+        pass
+    if not isinstance(diagnostic,dict): diagnostic = {}
+    return {'worker_cache':response.headers.get('X-Worker-Cache'),
+        'fetched_at':response.headers.get('X-Fetched-At'),
+        'cf_placement':response.headers.get('cf-placement'),
+        'cf_ray':response.headers.get('CF-Ray'),
+        'origem_cf_cache':diagnostic.get('origem_cf_cache'),
+        'diagnostico':diagnostic}
+
+def download(directory, via_cloudflare=False, sem_cache=False):
     def fetch(item):
         name, url = item
         for attempt in range(3):
             print(f'Baixando {name}, tentativa {attempt + 1}/3', flush=True)
+            start = time.monotonic()
             try:
                 response = requests.get(RELAY_URL if via_cloudflare else url,
-                    params={'fonte':RELAY_NAMES[name], 'formato':'arquivo'} if via_cloudflare else None,
+                    params={'fonte':RELAY_NAMES[name], 'formato':'arquivo', **({'nocache':'1'} if sem_cache else {})} if via_cloudflare else None,
                     timeout=(12, 55), allow_redirects=False)
+                record = {'fonte':name, 'tentativa':attempt+1, 'http':response.status_code,
+                    'bytes':len(response.content), 'segundos':round(time.monotonic()-start,3),
+                    'timestamp_utc':datetime.now(timezone.utc).isoformat(), **telemetry(response)}
+                if response.status_code != 200:
+                    record['erro'] = response.text[:1500]
+                print('COLETA ' + json.dumps(record,ensure_ascii=False),flush=True)
                 response.raise_for_status()
                 if response.status_code != 200:
                     raise ValueError(f'Resposta inesperada da fonte: {name}')
                 break
-            except (requests.ConnectionError, requests.Timeout) as error:
-                print(f'Falha de rede em {name}: {type(error).__name__}', flush=True)
-                if attempt == 2:
+            except (requests.ConnectionError, requests.Timeout, requests.HTTPError) as error:
+                status = error.response.status_code if isinstance(error,requests.HTTPError) and error.response is not None else None
+                print(json.dumps({'fonte':name,'tentativa':attempt+1,'erro':type(error).__name__,
+                    'http':status,'segundos':round(time.monotonic()-start,3)},ensure_ascii=False),flush=True)
+                if attempt == 2 or (status is not None and status not in [408,425,429,500,502,503,504]):
                     raise
                 time.sleep(2 ** attempt)
         payload = response.content
@@ -55,11 +81,27 @@ def download(directory, via_cloudflare=False):
                 raise ValueError(f'Origem da ponte não confere: {name}')
             if response.headers.get('X-Source-SHA256') != hashlib.sha256(payload).hexdigest():
                 raise ValueError(f'Hash da ponte não confere: {name}')
+            if sem_cache:
+                meta = telemetry(response)
+                if meta['worker_cache'] != 'BYPASS' or meta['diagnostico'].get('sem_cache') is not True:
+                    raise ValueError(f'Bypass do Worker não confirmado: {name}')
+                if meta['origem_cf_cache'] not in ['DYNAMIC','BYPASS','MISS','EXPIRED']:
+                    raise ValueError(f'Consulta sem cache da CDN não confirmada: {name}')
         if len(payload) < 20000: raise ValueError(f'Fonte muito pequena: {name}')
         if name.endswith('.pdf') and not payload.startswith(b'%PDF'): raise ValueError('PDF inválido')
         (directory / name).write_bytes(payload)
+        return {'fonte':name, 'ok':True, 'tentativas':attempt+1, 'bytes':len(payload), **telemetry(response)}
+    results = []
     with ThreadPoolExecutor(max_workers=3) as pool:
-        list(pool.map(fetch, URLS.items()))
+        futures = {pool.submit(fetch,item):item[0] for item in URLS.items()}
+        for future in as_completed(futures):
+            try: results.append(future.result())
+            except Exception as error:
+                results.append({'fonte':futures[future],'ok':False,'erro':str(error)[:1500]})
+    print('RESUMO_COLETA ' + json.dumps(results,ensure_ascii=False),flush=True)
+    failures = [r['fonte'] for r in results if not r['ok']]
+    if failures:
+        raise RuntimeError('Coleta incompleta; tabela anterior preservada. Fontes: ' + ', '.join(sorted(failures)))
 
 def soup(directory, name):
     document = BeautifulSoup((directory / name).read_text(encoding='utf-8'), 'html.parser')
@@ -236,12 +278,15 @@ if __name__ == '__main__':
     parser.add_argument('--fontes-dir', type=Path, required=True)
     parser.add_argument('--download', action='store_true')
     parser.add_argument('--via-cloudflare', action='store_true', help='Coleta pela ponte fixa da ATS, mantendo fontes oficiais e hashes')
+    parser.add_argument('--sem-cache',action='store_true',help='Diagnóstico: ignora caches na ponte; exige --download --via-cloudflare')
     parser.add_argument('--data', default=datetime.now(timezone.utc).date().isoformat())
     args = parser.parse_args()
     args.fontes_dir.mkdir(parents=True, exist_ok=True)
     if args.via_cloudflare and not args.download:
         parser.error('--via-cloudflare exige --download')
-    if args.download: download(args.fontes_dir, args.via_cloudflare)
+    if args.sem_cache and not (args.download and args.via_cloudflare):
+        parser.error('--sem-cache exige --download --via-cloudflare')
+    if args.download: download(args.fontes_dir, args.via_cloudflare, args.sem_cache)
     reference = datetime.strptime(args.data, '%Y-%m-%d').date()
     result = rebuild(args.fontes_dir, reference)
     if args.via_cloudflare:
