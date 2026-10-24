@@ -1,0 +1,6 @@
+name = "ats-fontes-oficiais-teste"
+main = "worker.js"
+compatibility_date = "2026-10-23"
+
+[placement]
+region = "aws:sa-east-1"

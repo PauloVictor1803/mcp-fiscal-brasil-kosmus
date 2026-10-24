@@ -15,15 +15,24 @@ jobs:
       - name: Consultar uma fonte de cada vez
         shell: python
         run: |
-          import requests, json, time
+          import requests, json, time, hashlib
           base = 'https://ats-fontes-oficiais-teste.paulo-magalhaes.workers.dev/'
+          expected = {'cest':'7c2bdc9db1ceb11faaa56b2582e77e5a1bcb66e51cd62b6de0f155a78359c45a','cfop':'51d12b7f9e1c2f08b9665a06875a64737726ce4a633138f437a90e431eb659e0','icms':'7eeb4e45976812c2951d190c158b6d2da77c282e115376f620e2a74c5527d190','moc':'5eb4cf2010b10b0b62f78197c4eb64025f24535d4c6e61158bc7806dd008f55d'}
           results = []
           for fonte in ['cfop', 'icms', 'moc', 'cest']:
               start = time.monotonic()
               print('INICIO ' + fonte, flush=True)
               try:
-                  response = requests.get(base, params={'fonte': fonte, 'formato': 'arquivo'}, timeout=(12,55), allow_redirects=False)
+                  response = requests.get(base, params={'fonte': fonte, 'formato': 'arquivo', 'nocache': '1'}, timeout=(12,75), allow_redirects=False)
                   result = {'fonte': fonte, 'http': response.status_code, 'bytes': len(response.content), 'cf_ray': response.headers.get('CF-Ray'), 'origem': response.headers.get('X-Official-Source'), 'sha256': response.headers.get('X-Source-SHA256')}
+                  result['placement_resposta'] = response.headers.get('cf-placement')
+                  result['diagnostico'] = response.headers.get('X-Source-Diagnostics')
+                  if response.status_code == 200:
+                      sha = hashlib.sha256(response.content).hexdigest()
+                      result['hash_corpo'] = sha
+                      result['hash_igual_referencia'] = sha == expected[fonte]
+                      result['hash_igual_cabecalho'] = sha == result['sha256']
+                      result['formato_valido'] = response.content.startswith(b'%PDF') if fonte == 'moc' else b'<html' in response.content[:1000].lower() or b'<!doctype' in response.content[:1000].lower()
                   if response.status_code != 200:
                       result['erro'] = response.text[:2000]
               except Exception as error:

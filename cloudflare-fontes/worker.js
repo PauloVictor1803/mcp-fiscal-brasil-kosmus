@@ -12,29 +12,36 @@ export default {
     if (!name) return Response.json({servico:'Teste de conectividade CONFAZ',fontes:Object.keys(sources)});
     if (!Object.hasOwn(sources,name)) return new Response('Fonte desconhecida',{status:404});
     const arquivo = new URL(request.url).searchParams.get('formato') === 'arquivo';
+    const nocache = new URL(request.url).searchParams.get('nocache') === '1';
     const cacheKey = new Request(new URL('/fontes/' + name, request.url));
-    if (arquivo) {
+    if (arquivo && !nocache) {
       const cached = await caches.default.match(cacheKey);
       if (cached) return cached;
     }
     const start = Date.now();
+    const diagnostico = {colo_entrada:request.cf?.colo ?? null, placement:request.headers.get('cf-placement'), origem_http:null, origem_bytes:null, tempo_cabecalhos_ms:null, tempo_corpo_ms:null, sem_cache:nocache};
     try {
-      const upstream = await fetch(sources[name], {signal:AbortSignal.timeout(20000),redirect:'manual'});
+      const upstream = await fetch(sources[name], {signal:AbortSignal.timeout(45000),redirect:'manual', ...(nocache ? {cache:'no-store'} : {})});
+      diagnostico.tempo_cabecalhos_ms=Date.now()-start;
+      diagnostico.origem_http=upstream.status;
+      const bodyStart=Date.now();
       const body = await upstream.arrayBuffer();
+      diagnostico.tempo_corpo_ms=Date.now()-bodyStart;
+      diagnostico.origem_bytes=body.byteLength;
       const digest = await crypto.subtle.digest('SHA-256',body);
       const sha256 = Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
       const sample = new TextDecoder().decode(body.slice(0,100));
       if (arquivo) {
         if (upstream.status !== 200 || body.byteLength < 20000 || body.byteLength > 6000000 || (name === 'moc' && !sample.startsWith('%PDF'))) throw new Error('Documento oficial indisponivel ou invalido');
-        const result = new Response(body,{headers:{'Content-Type':name==='moc'?'application/pdf':'text/html; charset=utf-8','Cache-Control':'public, max-age=3600','X-Official-Source':sources[name],'X-Source-SHA256':sha256,'X-Fetched-At':new Date().toISOString(),'X-Content-Type-Options':'nosniff'}});
-        ctx.waitUntil(caches.default.put(cacheKey,result.clone()));
+        const result = new Response(body,{headers:{'Content-Type':name==='moc'?'application/pdf':'text/html; charset=utf-8','Cache-Control':nocache?'no-store':'public, max-age=3600','X-Official-Source':sources[name],'X-Source-SHA256':sha256,'X-Fetched-At':new Date().toISOString(),'X-Content-Type-Options':'nosniff','X-Source-Diagnostics':JSON.stringify({...diagnostico,duracao_ms:Date.now()-start})}});
+        if (!nocache) ctx.waitUntil(caches.default.put(cacheKey,result.clone()));
         return result;
       }
       return Response.json({fonte:name,url:sources[name],http:upstream.status,bytes:body.byteLength,sha256,
         formato:name==='moc' ? (sample.startsWith('%PDF')?'PDF':'outro') : (/html|doctype/i.test(sample)?'HTML':'outro'),
-        duracao_ms:Date.now()-start}, {headers:{'Cache-Control':'no-store'}});
+        ...diagnostico,duracao_ms:Date.now()-start}, {headers:{'Cache-Control':'no-store'}});
     } catch (error) {
-      return Response.json({fonte:name,http:null,erro:error.name,mensagem:error.message,duracao_ms:Date.now()-start},{status:502,headers:{'Cache-Control':'no-store'}});
+      return Response.json({fonte:name,http:null,erro:error.name,mensagem:error.message,...diagnostico,duracao_ms:Date.now()-start},{status:502,headers:{'Cache-Control':'no-store'}});
     }
   },
 };

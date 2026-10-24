@@ -31,5 +31,20 @@ test('falha da origem nao vira documento valido nem cache', async()=>{
     globalThis.caches={default:{match:async()=>undefined,put:async()=>assert.fail('Não pode armazenar erro')}};
     const r=await worker.fetch(new Request('https://teste/?fonte=moc&formato=arquivo'),{}, {waitUntil:()=>assert.fail('Não pode armazenar erro')});
     assert.equal(r.status,502);
+    const detail=await r.json();
+    assert.equal(detail.origem_http,503);
+    assert.equal(detail.origem_bytes,12);
+  } finally {globalThis.fetch=previousFetch;globalThis.caches=previousCaches;}
+});
+
+test('diagnostico sem cache busca origem e registra placement', async()=>{
+  const previousFetch=globalThis.fetch,previousCaches=globalThis.caches;
+  try {
+    globalThis.caches={default:{match:async()=>assert.fail('Nao deve ler cache'),put:async()=>assert.fail('Nao deve gravar cache')}};
+    globalThis.fetch=async(url,opts)=>{assert.equal(opts.cache,'no-store');return new Response('<html>'+'a'.repeat(21000)+'</html>');};
+    const request=new Request('https://teste/?fonte=cest&formato=arquivo&nocache=1',{headers:{'cf-placement':'remote-GRU'}});
+    const r=await worker.fetch(request,{}, {waitUntil:()=>assert.fail('Nao deve gravar cache')});
+    assert.equal(r.status,200);assert.equal(r.headers.get('Cache-Control'),'no-store');
+    const d=JSON.parse(r.headers.get('X-Source-Diagnostics'));assert.equal(d.placement,'remote-GRU');assert.equal(d.sem_cache,true);assert.equal(d.origem_http,200);
   } finally {globalThis.fetch=previousFetch;globalThis.caches=previousCaches;}
 });
