@@ -39,5 +39,5 @@ A rotina deve estar presente e habilitada na branch padrao do repositorio.
 
 Consulta de referencia documental nao define tributacao. A validacao da chave
 confere formato numerico e digito, sem consultar autorizacao da nota na SEFAZ.
-A Tina nao foi conectada ou alterada nesta implementacao.
+A nova ferramenta ainda nao foi adicionada ao filtro de ferramentas da Tina.
 
