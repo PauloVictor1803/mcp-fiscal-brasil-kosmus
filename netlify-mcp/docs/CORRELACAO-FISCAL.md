@@ -2,7 +2,8 @@
 
 ## Objetivo e estado
 
-A ferramenta `correlacionar_dados_fiscais` foi implementada e testada localmente.
+A ferramenta `correlacionar_dados_fiscais` foi implementada, testada e publicada
+na Netlify em 26/10/2026 (deploy `6adfb305e4146e392fb7c1ca`).
 Ela reúne, numa chamada, a busca de candidatos de CEST por descrição/NCM e a
 conferência de códigos CFOP, CST ICMS, CSOSN, CST IPI, CST PIS e CST COFINS já
 levantados no atendimento ou na base ATS. Cada retorno mantém o código, a
@@ -78,7 +79,14 @@ os dados efetivos da operação continuam indispensáveis.
 
 `npm test` verifica o transporte MCP, as tabelas e dois cenários novos:
 xampu com/sem NCM e modalidade, e conferência de CFOP/CST/CSOSN numa devolução.
-Os testes não executam a Tina nem geram cobrança de modelo. Antes da conexão ao
-agente, revisar o retorno de `tools/list`, confirmar a publicação da versão do
-MCP na Netlify e rodar um atendimento controlado autorizado pelo Paulo.
+Os testes não executam a Tina nem geram cobrança de modelo. Após o deploy,
+`tools/list` no endpoint hospedado retornou as cinco ferramentas, e uma chamada
+autenticada com `descricao_produto: "xampu"` retornou os candidatos `20.017.00`
+e `28.011.00` usando a referência de 26/10/2026. O painel público também
+passou a oferecer a opção **Cruzar dados fiscais**. O token usado na verificação
+permaneceu fora do GitHub e desta documentação.
+
+A Tina ainda tem filtro com as quatro ferramentas anteriores. Adicionar a nova
+ferramenta ao agente e rodar um atendimento controlado são etapas futuras,
+dependentes da autorização exigida para alterações do agente e testes pagos.
 
