@@ -4,6 +4,7 @@ const forms = {
   validar_chave_nfe: ['chave', 'Chave com 44 dígitos', ''],
   validar_cst: ['cst', 'CST/CSOSN (preserve os zeros)', '000'],
   consultar_cest: ['descricao', 'Produto para buscar CEST', 'xampu'],
+  correlacionar_dados_fiscais: ['descricao_produto', 'Descrição do produto (opcional se informar códigos)', 'xampu'],
 };
 byId('tool').addEventListener('change', () => {
   const [, label, example] = forms[byId('tool').value];
@@ -11,6 +12,8 @@ byId('tool').addEventListener('change', () => {
   byId('codigo').value = example;
   byId('tributo-label').hidden = byId('tool').value !== 'validar_cst';
   byId('cest-modo-label').hidden = byId('tool').value !== 'consultar_cest';
+  byId('correlacao-campos').hidden = byId('tool').value !== 'correlacionar_dados_fiscais';
+  byId('codigo').required = byId('tool').value !== 'correlacionar_dados_fiscais';
   byId('cest-modo').value = 'descricao';
 });
 byId('cest-modo').addEventListener('change', () => {
@@ -38,7 +41,13 @@ byId('teste').addEventListener('submit', async event => {
     await send('notifications/initialized', {});
     const name = byId('tool').value;
     const field = name === 'consultar_cest' ? byId('cest-modo').value : forms[name][0];
-    const args = { [field]: byId('codigo').value };
+    const args = name === 'correlacionar_dados_fiscais' ? {} : { [field]: byId('codigo').value };
+    if (name === 'correlacionar_dados_fiscais') {
+      if (byId('codigo').value.trim()) args.descricao_produto = byId('codigo').value.trim();
+      for (const key of ['ncm','modalidade_venda','cfop','cst_icms','csosn','regime','cst_ipi','cst_pis','cst_cofins']) {
+        if (byId(key).value.trim()) args[key] = byId(key).value.trim();
+      }
+    }
     if (name === 'validar_cst') args.tributo = byId('tributo').value;
     const result = await send('tools/call', { name, arguments: args }, 2);
     const text = result.content[0].text;
@@ -47,3 +56,4 @@ byId('teste').addEventListener('submit', async event => {
   } catch (error) { byId('resultado').textContent = `Erro: ${error.message}`; }
   finally { byId('executar').disabled = false; }
 });
+

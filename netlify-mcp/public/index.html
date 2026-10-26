@@ -13,13 +13,28 @@ O CEST também pode ser pesquisado por descrição ou NCM, com candidatos e cond
 <form id="teste">
 <label>Token de acesso <input id="token" type="password" autocomplete="off" placeholder="AUTH_TOKEN configurado na Netlify"></label>
 <small>Usado somente na requisição. Não é gravado no navegador.</small>
-<label>Ferramenta <select id="tool"><option value="validar_chave_nfe">Validar chave NF-e/NFC-e</option><option value="consultar_cfop">Consultar CFOP</option><option value="validar_cst">Consultar CST/CSOSN</option><option value="consultar_cest">Consultar CEST</option></select></label>
+<label>Ferramenta <select id="tool"><option value="validar_chave_nfe">Validar chave NF-e/NFC-e</option><option value="consultar_cfop">Consultar CFOP</option><option value="validar_cst">Consultar CST/CSOSN</option><option value="consultar_cest">Consultar CEST</option><option value="correlacionar_dados_fiscais">Cruzar dados fiscais</option></select></label>
 <label><span id="campo">Chave com 44 dígitos</span> <input id="codigo" type="text" maxlength="80" required></label>
 <label id="cest-modo-label" hidden>Pesquisar CEST por <select id="cest-modo"><option value="descricao">Descrição do produto</option><option value="ncm">NCM</option><option value="cest">Código CEST</option></select></label>
 <label id="tributo-label" hidden>Tributo <select id="tributo"><option>ICMS</option><option>CSOSN</option><option>IPI</option><option>PIS</option><option>COFINS</option></select></label>
+<div id="correlacao-campos" hidden>
+<p><small>Informe só os dados que você já confirmou. Os códigos são candidatos para conferência, não uma escolha automática de tributação.</small></p>
+<label>NCM confirmado em consulta separada <input id="ncm" inputmode="numeric" maxlength="10" placeholder="Opcional"></label>
+<label>Modalidade da venda <select id="modalidade_venda"><option value="">Não informada</option><option value="outras">Outras</option><option value="porta_a_porta">Porta a porta</option></select></label>
+<label>CFOP candidato <input id="cfop" maxlength="5" placeholder="Opcional, por exemplo 5.202"></label>
+<label>CST ICMS candidato <input id="cst_icms" maxlength="3" placeholder="Opcional"></label>
+<label>CSOSN candidato <input id="csosn" maxlength="3" placeholder="Opcional"></label>
+<label>Regime do emitente <select id="regime"><option value="">Não informado</option><option value="simples_nacional">Simples Nacional</option><option value="regime_normal">Regime normal</option><option value="nao_confirmado">Ainda não confirmado</option></select></label>
+<details><summary>Outros códigos candidatos</summary>
+<label>CST IPI <input id="cst_ipi" maxlength="2" placeholder="Opcional"></label>
+<label>CST PIS <input id="cst_pis" maxlength="2" placeholder="Opcional"></label>
+<label>CST COFINS <input id="cst_cofins" maxlength="2" placeholder="Opcional"></label>
+</details>
+</div>
 <button id="executar">Executar consulta</button>
 </form>
 <pre id="resultado" role="status" aria-live="polite">Selecione uma ferramenta e execute.</pre>
 <script type="module" src="/app.js"></script>
 <style>[hidden]{display:none!important}</style>
 </html>
+
