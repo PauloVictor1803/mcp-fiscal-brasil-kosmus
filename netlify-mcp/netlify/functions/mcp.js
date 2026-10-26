@@ -68,7 +68,7 @@ export default async function handler(request) {
   else if (method === 'tools/list') result = { tools };
   else if (method === 'tools/call') {
     if (!tools.some(t => t.name === params.name)) return error(id, -32602, 'Ferramenta desconhecida.');
-    if (params.name !== 'validar_chave_nfe') await refreshTables();
+    if (!['validar_chave_nfe', 'consultar_aliquota_icms'].includes(params.name)) await refreshTables();
     try { result = { content: [{ type: 'text', text: JSON.stringify(callTool(params.name, params.arguments)) }] }; }
     catch (err) { result = { isError: true, content: [{ type: 'text', text: err.message }] }; }
   } else return error(id, -32601, 'Método não implementado.');
