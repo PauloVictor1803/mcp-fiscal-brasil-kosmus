@@ -52,6 +52,19 @@ const declaredTools = [
       descricao: { type: 'string', description: 'Produto, por exemplo xampu. Pode combinar com NCM.', maxLength: 120 },
       ncm: code('NCM de 8 dígitos confirmado na consulta Siscomex.', '^\\s*(?:[0-9]{8}|[0-9]{4}\\.[0-9]{2}\\.[0-9]{2})\\s*$'),
       modalidade_venda: { type: 'string', enum: ['porta_a_porta', 'outras'], description: 'Preencher somente após confirmar o sistema de venda.' } }, []), annotations },
+  { name: 'correlacionar_dados_fiscais', description: 'Reúne candidatos de CEST por produto/NCM e confere códigos CFOP, CST/CSOSN, IPI, PIS e COFINS já levantados na base ATS. Mostra fontes e pendências; não escolhe tributação, ST, alíquota ou base de cálculo.',
+    inputSchema: schema({
+      descricao_produto: { type: 'string', description: 'Descrição do produto informada pelo cliente; não equivale à classificação NCM.', maxLength: 120 },
+      ncm: code('NCM de 8 dígitos obtido ou confirmado separadamente no Siscomex; este MCP não consulta o Siscomex.', '^\\s*(?:[0-9]{8}|[0-9]{4}\\.[0-9]{2}\\.[0-9]{2})\\s*$'),
+      modalidade_venda: { type: 'string', enum: ['porta_a_porta', 'outras'], description: 'Somente se a modalidade foi confirmada.' },
+      cfop: code('CFOP candidato obtido da base ATS ou do documento da operação.', '^\\s*[123567]\\.?[0-9]{3}\\s*$'),
+      cst_icms: code('CST ICMS candidato, com 2 ou 3 dígitos.', '^[0-9]{2,3}$'),
+      csosn: code('CSOSN candidato de 3 dígitos.', '^[0-9]{3}$'),
+      cst_ipi: code('CST IPI candidato de 2 dígitos.', '^[0-9]{2}$'),
+      cst_pis: code('CST PIS candidato de 2 dígitos.', '^[0-9]{2}$'),
+      cst_cofins: code('CST COFINS candidato de 2 dígitos.', '^[0-9]{2}$'),
+      regime: { type: 'string', enum: ['simples_nacional', 'regime_normal', 'nao_confirmado'], description: 'Regime confirmado em consulta externa ou informado; não é inferido de IE/CNPJ.' },
+    }, []), annotations },
 ];
 
 // Falha fechada: revisão técnica do transporte não aprova conteúdo fiscal.
@@ -182,11 +195,52 @@ function searchCest(args) {
   return result;
 }
 
+function correlate(args) {
+  const lookups = ['descricao_produto', 'ncm', 'cfop', 'cst_icms', 'csosn', 'cst_ipi', 'cst_pis', 'cst_cofins'];
+  if (!lookups.some(key => args[key])) throw new Error('Informe um produto, NCM ou código fiscal para conferir.');
+  if (args.modalidade_venda && !args.descricao_produto && !args.ncm) throw new Error('Modalidade de venda exige produto ou NCM.');
+  const result = { referencia: data.metadata.data_referencia, consultas: {}, confirmar: [],
+    limites: 'Descrições e correlações são referências. Conferir a operação na base ATS e o enquadramento com a contabilidade; o MCP não determina ST, alíquota nem base de cálculo.' };
+  if (args.descricao_produto || args.ncm) {
+    result.consultas.cest = searchCest({ ...(args.descricao_produto ? { descricao: args.descricao_produto } : {}),
+      ...(args.ncm ? { ncm: args.ncm } : {}), ...(args.modalidade_venda ? { modalidade_venda: args.modalidade_venda } : {}) });
+    result.confirmar.push(...(result.consultas.cest.confirmar || []));
+    if (args.ncm) result.ncm = { codigo: args.ncm.replaceAll('.', '').trim(), situacao: 'informado; classificação não verificada por este MCP' };
+  }
+  const entries = [
+    ['cfop', 'consultar_cfop', { cfop: args.cfop }],
+    ['cst_icms', 'validar_cst', { cst: args.cst_icms, tributo: 'ICMS' }],
+    ['csosn', 'validar_cst', { cst: args.csosn, tributo: 'CSOSN' }],
+    ['cst_ipi', 'validar_cst', { cst: args.cst_ipi, tributo: 'IPI' }],
+    ['cst_pis', 'validar_cst', { cst: args.cst_pis, tributo: 'PIS' }],
+    ['cst_cofins', 'validar_cst', { cst: args.cst_cofins, tributo: 'COFINS' }],
+  ];
+  for (const [key, tool, parameters] of entries) {
+    if (parameters.cfop || parameters.cst) {
+      result.consultas[key] = callTool(tool, parameters);
+      if (!result.consultas[key].encontrado || (result.consultas[key].status && result.consultas[key].status !== 'ativo'))
+        result.confirmar.push(`O código ${key} não está ativo nesta referência; confira a situação oficial antes de orientar.`);
+    }
+  }
+  if ((args.cfop || args.cst_icms || args.csosn || args.cst_ipi || args.cst_pis || args.cst_cofins) && !args.regime)
+    result.confirmar.push('Qual é o regime tributário confirmado para o emitente desta operação?');
+  if (args.cfop) result.confirmar.push('A descrição do CFOP corresponde à operação, ao sentido da nota e à UF envolvidos?');
+  if (args.cst_icms && args.csosn) result.confirmar.push('CST e CSOSN foram informados em campos distintos do Resulth? Confira qual código compõe a NF-e conforme o regime e a operação.');
+  result.fontes = {
+    ...(result.consultas.cest ? { cest: 'https://www.confaz.fazenda.gov.br/legislacao/convenios/2018/CV142_18' } : {}),
+    ...(result.consultas.cfop ? { cfop: 'https://www.confaz.fazenda.gov.br/legislacao/ajustes/sinief/cvsn_70' } : {}),
+    ...(entries.slice(1).some(([key]) => result.consultas[key]) ? { cst_csosn: 'https://www.nfe.fazenda.gov.br/portal/listaConteudo.aspx?tipoConteudo=ndIjl+iEFdE=' } : {}),
+  };
+  if ((Date.now() - Date.parse(data.metadata.data_referencia)) / 86400000 > 2) result.atualizacao_atrasada = true;
+  return result;
+}
+
 export function callTool(name, args) {
   const tool = tools.find(t => t.name === name);
   if (!tool) throw new Error('Ferramenta desconhecida.');
   validateArguments(tool, args);
   if (name === 'validar_chave_nfe') return validateKey(args.chave);
+  if (name === 'correlacionar_dados_fiscais') return correlate(args);
   if (name === 'consultar_cest') {
     const result = searchCest(args);
     if (result) return result;
@@ -223,3 +277,4 @@ export function callTool(name, args) {
 }
 
 export const tableMetadata = data.metadata;
+
