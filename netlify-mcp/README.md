@@ -1,6 +1,7 @@
 # MCP Fiscal ATS na Netlify
 
-Quatro ferramentas: `consultar_cfop`, `validar_chave_nfe`, `validar_cst` e `consultar_cest`.
+Cinco ferramentas: `consultar_cfop`, `validar_chave_nfe`, `validar_cst`,
+`consultar_cest` e `correlacionar_dados_fiscais`.
 Dados reconstruidos nos documentos oficiais CONFAZ/SINIEF e MOC NF-e, com referencia,
 codigos revogados e vigencias futuras. NCM permanece na consulta Siscomex existente.
 
@@ -8,6 +9,7 @@ codigos revogados e vigencias futuras. NCM permanece na consulta Siscomex existe
 - MCP: https://ats-fiscal-mcp-kosmus.netlify.app/mcp
 - [Documentacao de arquitetura, fontes, atualizacao e operacao](docs/OPERACAO-MCP-FISCAL.md)
 - [Historico da auditoria do snapshot reprovado](docs/AUDITORIA-TABELAS.md)
+- [Correlacao fiscal: entradas, evidencias e limites](docs/CORRELACAO-FISCAL.md)
 
 ## Executar
 
@@ -38,3 +40,4 @@ A rotina deve estar presente e habilitada na branch padrao do repositorio.
 Consulta de referencia documental nao define tributacao. A validacao da chave
 confere formato numerico e digito, sem consultar autorizacao da nota na SEFAZ.
 A Tina nao foi conectada ou alterada nesta implementacao.
+
