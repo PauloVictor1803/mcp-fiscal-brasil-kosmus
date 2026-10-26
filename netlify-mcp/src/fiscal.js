@@ -202,9 +202,11 @@ function correlate(args) {
   const result = { referencia: data.metadata.data_referencia, consultas: {}, confirmar: [],
     limites: 'Descrições e correlações são referências. Conferir a operação na base ATS e o enquadramento com a contabilidade; o MCP não determina ST, alíquota nem base de cálculo.' };
   if (args.descricao_produto || args.ncm) {
-    result.consultas.cest = searchCest({ ...(args.descricao_produto ? { descricao: args.descricao_produto } : {}),
+    const cest = searchCest({ ...(args.descricao_produto ? { descricao: args.descricao_produto } : {}),
       ...(args.ncm ? { ncm: args.ncm } : {}), ...(args.modalidade_venda ? { modalidade_venda: args.modalidade_venda } : {}) });
-    result.confirmar.push(...(result.consultas.cest.confirmar || []));
+    result.confirmar.push(...(cest.confirmar || []));
+    const { confirmar, referencia, fonte, atualizacao_atrasada, ...compact } = cest;
+    result.consultas.cest = compact;
     if (args.ncm) result.ncm = { codigo: args.ncm.replaceAll('.', '').trim(), situacao: 'informado; classificação não verificada por este MCP' };
   }
   const entries = [
@@ -217,9 +219,11 @@ function correlate(args) {
   ];
   for (const [key, tool, parameters] of entries) {
     if (parameters.cfop || parameters.cst) {
-      result.consultas[key] = callTool(tool, parameters);
-      if (!result.consultas[key].encontrado || (result.consultas[key].status && result.consultas[key].status !== 'ativo'))
+      const lookup = callTool(tool, parameters);
+      if (!lookup.encontrado || (lookup.status && lookup.status !== 'ativo'))
         result.confirmar.push(`O código ${key} não está ativo nesta referência; confira a situação oficial antes de orientar.`);
+      const { referencia, atualizacao_atrasada, ...compact } = lookup;
+      result.consultas[key] = compact;
     }
   }
   if ((args.cfop || args.cst_icms || args.csosn || args.cst_ipi || args.cst_pis || args.cst_cofins) && !args.regime)
