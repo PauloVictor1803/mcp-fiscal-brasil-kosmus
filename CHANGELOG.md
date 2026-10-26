@@ -74,6 +74,98 @@ portadas seletivamente para o repositório canônico.
 * nenhum subcomando do CLI (`cnpj`, `cpf`, `cep`, `simples`, `municipio`, `compliance`, `supplier`, `regimes`) vaza mais traceback: erro de negócio vira JSON estruturado no stdout com código de saída 1, erro inesperado com código 2
 * corpo de resposta HTTP não-JSON de serviços externos agora vira `FiscalHTTPError` em vez de `json.JSONDecodeError` não tratado
 
+## [0.6.0](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/compare/v0.5.1...v0.6.0) (2026-10-26)
+
+
+### Novas funcionalidades
+
+* adiciona modulo NF-e (parse, DANFE, assinatura, distribuicao, manifestacao) ([#65](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/65)) ([f7ff884](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/f7ff8842acc07ee7a376a52b8beb436a1bccbbac))
+* adiciona simulador da transicao tributaria IBS/CBS (2026-2033) ([#64](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/64)) ([8d30af6](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/8d30af6cb3325ae577c48ceb607d95e206f6bf68))
+* **agentic:** tools de alto nivel para agentes de IA ([#10](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/10)) ([c22e08e](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/c22e08e8506dc5c93a81fb4c23f70cf73a39aaef))
+* cálculo de impostos de importação por NCM (MVP) ([#70](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/70)) ([85916e2](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/85916e23f41149d8f02d8bca3d8dead3a4df2fc2))
+* circuit breaker para a NFS-e Nacional ADN ([#49](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/49)) ([#68](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/68)) ([2fa2f52](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/2fa2f52a4783eb79d12a076efb1b46f75a8fd3fc))
+* **cnpj,nfe:** provedor premium opcional cpfcnpj.com.br (opt-in) ([#142](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/142)) ([10a3890](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/10a38904e157718e3fcd37afc166de132817487b))
+* **core:** infraestrutura comum - HTTP client, logging, config, erros ([#8](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/8)) ([7628b07](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/7628b07cb788c0e7d562dace5d84c08a92ca226f))
+* **datasources:** 8 novas fontes de dados ([#9](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/9)) ([43351ef](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/43351ef909d7b0a9320844dd39032508be8dfd94))
+* **deploy:** blueprints Render.com e Fly.io + pagina de hospedagem ([#15](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/15)) ([d8cb9c5](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/d8cb9c59f1cd3aca3e9a09c6e9b2790bef8493af))
+* examples, tests, robustness fixes e marketing pack ([#6](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/6)) ([24c88b5](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/24c88b5ea2aa44142a8f6fae3f230601d136ab4d))
+* **interfaces:** CLI, REST API, Web UI demo e npm wrapper ([#11](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/11)) ([3710d58](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/3710d58f46f0489869b9ae26e6e3a726fb958102))
+* MCP Fiscal Brasil v0.1.0 - primeiro servidor MCP para o sistema fiscal brasileiro ([8744f25](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/8744f25a041b0819fdab478daee423cc9cf69fb7))
+* Onda 1 - tabelas fiscais, indexadores BCB, modulos internos expostos ([#50](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/50)) ([51e0b8f](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/51e0b8f4858c3b45309659b0a7cd39a2966c9f7a))
+* Reforma Tributaria 2026 - IBS/CBS/IS, CNPJ alfanumerico, NFS-e Nacional ([#48](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/48)) ([40bdb7f](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/40bdb7f3614727b8786d0b7bb7e556d34ec2de6e))
+* SDK Python - FiscalBrasil class para integracao direta em apps ([cd93596](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/cd9359617537568edd092d196ca9c1a82d326ad3))
+* strengthen fiscal agent workflows ([#36](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/36)) ([2ff3be6](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/2ff3be6fe4c904f11a5047fe6dcc2ec8da901d33))
+* suporte HTTP/SSE transport + smithery.yaml para publicacao ([7e06dd1](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/7e06dd143fa41377335d410857576c15470a4f0a))
+* v0.1.1 - qualidade e cobertura completa ([9f1592a](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/9f1592ad70be1f389df8f3ab83e78c2ebca3066c))
+
+
+### Correções
+
+* CLI sem traceback e status do Simples sem falso erro para CNPJ não optante ([#139](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/139)) ([46ae8f2](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/46ae8f2b4a87a0cd52243e061c36f439d818be18))
+* corrige case do namespace no server.json ([#58](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/58)) ([e2124de](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/e2124de09678c1373b2cc1b3daa2a486c587ce93))
+* corrige ferramentas que liam endpoints de objeto como lista ([#107](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/107)) ([d055004](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/d055004f89bb0bea2505b212d39e156d624a83d1))
+* corrige inversão das alíquotas de ICMS interestadual (Res. Senado 22/1989) ([#54](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/54)) ([3ca412a](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/3ca412a5a4f5970d5ececee0b18f1a4f368d25f5))
+* corrige vulnerabilidades de dependências (auditoria supply chain) ([#130](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/130)) ([6bccf21](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/6bccf2123a734392953928cffb8fd05fdc877a98))
+* corrigir esteira CI - lint, testes e types ([56a58ff](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/56a58ff6dc234afffe49784e85f99288dbe2811d))
+* **deps:** corrige 11 vulnerabilidades do Dependabot (1 critica) ([#30](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/30)) ([40ef070](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/40ef07056500907cbd0d1e0a029298bfd5168bd2))
+* encurta description do server.json para o limite de 100 chars do MCP Registry ([#31](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/31)) ([aa897a3](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/aa897a33a944a5fa087e56a1a0216d4e66cffd84))
+* esteira de qualidade - security, bugs, lint, testes ([7d8cb46](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/7d8cb46dd6939970fa4f4d8e9b636a5385359be1))
+* harden fiscal validation and release metadata ([#99](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/99)) ([93ec232](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/93ec2327404f04991cee035845f9d176264d8e4b))
+* **i18n:** corrigir acentuação pt-BR em docs e docstrings ([#17](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/17)) ([20a2477](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/20a247746f05abfa7b217c70e120cf049ff09f6d))
+* **i18n:** corrigir acentuação restante em docs pt-BR (round 3) ([#18](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/18)) ([e640926](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/e64092684f04685d64958fe1b0cbae5a256ab03b))
+* parser SPED extrai valores de PIS/COFINS/ICMS ([#61](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/61)) ([#67](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/67)) ([6078b7b](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/6078b7b66c79879cda24bf8ffe9e3cde89ea315c))
+* Portuguese accents in README ([cdac1a0](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/cdac1a08023b791c8bfc421c6863542490012310))
+* reduz description do server.json para &lt;= 100 chars ([#57](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/57)) ([ee34f7c](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/ee34f7cc6f6df576a69682b3575b442124bb9c25))
+* reimplementa consulta de status SEFAZ e porta correcoes do fork Italo9 ([#116](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/116)) ([34b648a](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/34b648ac2da35fdda288c1bda94438da3a767615))
+* remove manual CodeQL workflow, use GitHub default setup instead ([b5755e0](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/b5755e01ac91d92fa790d11dab5063c6f5fd43c2))
+* render do README no PyPI (imagem com URL absoluta + numero de tools) ([#80](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/80)) ([db2fd31](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/db2fd310e841076a85c5d9ac4e9a8763adce87c1))
+* revisao completa de portugues em todos os textos ([3e8540f](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/3e8540f06b778ca62cc704015a63310147462945))
+* sincroniza versão 0.3.1 e aguarda PyPI antes de publicar no registry ([#60](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/60)) ([792c337](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/792c337e427cd89012111d74788360ad7cdeafa3))
+* valida caminhos de arquivo contra path injection (CodeQL High) ([#81](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/81)) ([be6f39e](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/be6f39e25aaa9680f7d88f32cfc67138d5988a11))
+* welcome bot em pt-BR e sem comentar em bots ([#82](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/82)) ([8a47c4d](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/8a47c4de6293def59b17070c7d4f0914771e2cc3))
+
+
+### Documentação
+
+* acentuar negativas no comparativo ([#123](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/123)) ([e78917a](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/e78917a7f6845b9f1b6701a61d20856ecf5fb5c8))
+* add CHANGELOG.md with release history ([7cc852a](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/7cc852a747d53d3f2649564e04e9983185df2d39))
+* adiciona badge de cobertura de testes (85%) ao README ([#108](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/108)) ([fc2a086](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/fc2a086475de3f8059104594b61d79e3d31ec9ea))
+* adiciona link da LinkedIn Newsletter no README ([#105](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/105)) ([ce614b6](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/ce614b652171f73c62b5acb711795a2e6c5814d0))
+* alinha comandos de contribuição com CI ([#111](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/111)) ([21b46a4](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/21b46a4d737de96f05512b05808984aa56e01c2e))
+* atualiza roadmap para o estado real (v0.5.x) e Star History responsivo a tema ([#106](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/106)) ([b0d3a74](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/b0d3a74e0255e2f8a145815ff533ac27fd95b9c7))
+* corrige acentos no README do wrapper npm ([#112](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/112)) ([9fbb1eb](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/9fbb1ebea47a45c7cf7966a67a972d3745e7670c))
+* corrige ancora de workflows no README ([#110](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/110)) ([6fbae4e](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/6fbae4e90b02b47f575719ce049627f2f2dd4d71))
+* fix SPED docstring indentation ([#100](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/100)) ([42734bb](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/42734bb16e4b578c5ee8670837d4ad63eb59f8b4))
+* limpa cabeçalho do README (oculta mcp-name + corrige badge de downloads) ([#103](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/103)) ([7f2981f](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/7f2981f5354cb0fe1ed315cdf0bc03a25e1c46e9))
+* **marketing:** blog post de lancamento v0.2.0 (PT-BR, ~1700 palavras) ([#14](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/14)) ([abab87c](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/abab87cac8ecd2835d182f9cd3e48acbf2442d9a))
+* polish pt-BR release notes ([#101](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/101)) ([c26e4d9](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/c26e4d95a779dcb19ebb0938ac10ae6b89e6ad45))
+* publica checklist verificável do MCP Fiscal ([#138](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/138)) ([c0ec426](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/c0ec42609e9bb477c3f6f1fdae844d5f2ee9a2ce))
+* README com uvx e snippets de instalacao para clientes MCP ([#47](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/47)) ([d01ba30](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/d01ba30057ec78d7c843c035406a1246df90221c))
+* registra ativação da Tina 53, testes e pendências reais ([8fa59aa](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/8fa59aa7c89bc7c18de1d67e8cd17365344507b0))
+* registra seis testes da Tina e revisa diagnóstico de IE ([8226bff](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/8226bffa6bdec968d67055baa40d8277ef1cbd3f))
+* roadmap detalhado v0.2.0 (discovery fase 0) ([#7](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/7)) ([a36c089](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/a36c08983bd2b82c2fdc2c5285e146d6be7a658c))
+* secao Como acompanhar (Discussions, releases, newsletter) ([#75](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/75)) ([18366f7](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/18366f7acd82f25fa4b2bceb401dfe8e24fd9104))
+* site mkdocs-material com deploy automatico em GitHub Pages ([#13](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/13)) ([2068fd6](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/2068fd6ef44eef20e44c00f33e82fdc6a9916710))
+* **site:** auto-geracao de referencia de API e timestamps via git ([#16](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/16)) ([121aea4](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/121aea40f82019fd86cf6277e647631a8c1b9e31))
+
+
+### Integração contínua
+
+* add CodeQL security scanning ([656cf13](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/656cf13fdcbbcbd36b7847f7135804eed3cd478a))
+* add Dependabot auto-merge for minor and patch updates ([fa5a600](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/fa5a60097dfaa3cb463bfa893d79bf65c7442d84))
+* add dependabot, security policy, enable delete-branch-on-merge ([b27cbf1](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/b27cbf16d343014de183b4ecee22e293f5a11695))
+* add welcome bot for first-time contributors ([98f88d5](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/98f88d569d1af555e7f9c26b8d644acd809b18c1))
+* adiciona auditoria permanente de supply chain (osv-scanner + dependabot) ([df13676](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/df136768d8936fb7522f70fae38894d7234abd6a))
+* adiciona workflow CodeQL com workflow_dispatch para re-scan manual ([bc96ed5](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/bc96ed5bc2701079127737fcdf5c5398c916ba81))
+* auto-aprovar e auto-mergear Dependabot patch/minor (vulns inclusas) ([#83](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/83)) ([c852707](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/c852707d3cd14157924600a058da2670d4f6cc7d))
+* bots de triagem de issues (on-open + re-triagem semanal) ([#69](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/69)) ([51263b5](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/51263b5266b2846df3f74d725ea10d1f55e8f510))
+* CodeQL focado em seguranca (security-extended) ([#85](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/85)) ([72ebaf6](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/72ebaf60f800d0cbc3bc39abbf72efc5f61f506a))
+* pina actions por SHA (supply chain, CodeQL) ([#86](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/86)) ([fce7066](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/fce70663c90976d1b15d2c50027cfc537118e847))
+* publica no registry oficial MCP via OIDC ([#56](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/56)) ([5322400](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/5322400c5852d3c9387a9b2b8f5c4b6f6c542b45))
+* publish no PyPI via API token ([#53](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/53)) ([eb26df7](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/eb26df7971e7a529981271be302c06aef6bb0f76))
+* release automatizado com release-please (Release PR + publish encadeado) ([#87](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/87)) ([1875227](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/18752278f4bd153743ff0ee32e733cf28acfbb63))
+* release notes automaticas com release-drafter (motor de newsletter via GitHub) ([#79](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/issues/79)) ([26a3dda](https://github.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/commit/26a3dda93578c888d76a6fd6f70fdef3c015ec4c))
+
 ## [0.5.1](https://github.com/DeHor-Labs/mcp-fiscal-brasil/compare/v0.5.0...v0.5.1) (2026-06-21)
 
 
