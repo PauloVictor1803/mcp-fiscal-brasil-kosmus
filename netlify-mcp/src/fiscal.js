@@ -163,9 +163,9 @@ function searchCest(args) {
   matches = matches.filter(m => m._penalty === bestPenalty);
   matches.sort((a, b) => a._penalty - b._penalty || a.cest.localeCompare(b.cest));
   const candidatos = [];
-  for (const match of matches.slice(0, 3)) {
+  for (const match of matches.slice(0, 6)) {
     const { _penalty, ...candidate } = match;
-    if (Buffer.byteLength(JSON.stringify([...candidatos, candidate])) > 1900) break;
+    if (Buffer.byteLength(JSON.stringify([...candidatos, candidate])) > 2400) break;
     candidatos.push(candidate);
   }
   const perguntas = [];

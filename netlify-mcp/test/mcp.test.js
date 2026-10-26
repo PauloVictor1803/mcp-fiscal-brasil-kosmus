@@ -58,9 +58,12 @@ test('busca CEST por produto, NCM e modalidade distingue os xampus',()=>{
  assert.ok(callTool('consultar_cest',{descricao:'sabonete'}).total>0);
 });
 test('busca CEST rejeita entradas ambiguas e limita candidatos e contexto',()=>{
+ const amplo=callTool('consultar_cest',{descricao:'óleo'});
+ assert.equal(amplo.candidatos.length,6);
+ assert.equal(amplo.mais_resultados,true);
  for(const args of [{},{descricao:' '},{descricao:'produto'},{descricao:'de para'},{ncm:'33'},{cest:'2001700',descricao:'xampu'},{descricao:'a'.repeat(121)},{modalidade_venda:'outras'}])assert.throws(()=>callTool('consultar_cest',args));
  for(const descricao of ['sabão','preparações','óleo','cabelo','xampu','polietileno']){
-  const r=callTool('consultar_cest',{descricao});assert.ok(r.candidatos.length<=3);
+  const r=callTool('consultar_cest',{descricao});assert.ok(r.candidatos.length<=6);
   assert.ok(Buffer.byteLength(JSON.stringify(r))<3000);
   assert.equal(r.mais_resultados,r.total>r.candidatos.length);
   assert.ok(r.candidatos.every(c=>data.CEST[c.cest.replaceAll('.','')].status==='ativo'));
