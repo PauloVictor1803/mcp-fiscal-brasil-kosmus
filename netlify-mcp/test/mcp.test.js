@@ -7,7 +7,7 @@ const chave='35240112345678000195550010000001231000000011';
 const headers={'content-type':'application/json',accept:'application/json, text/event-stream'};
 const req=(body,extra={})=>new Request('http://localhost/mcp',{method:'POST',headers:{...headers,...extra},body:JSON.stringify(body)});
 test('catalogo MCP e transporte',async()=>{
- assert.equal(tools.length,4);assert.ok(Buffer.byteLength(JSON.stringify({tools}))<3000);
+ assert.equal(tools.length,5);assert.ok(Buffer.byteLength(JSON.stringify({tools}))<5000);
  const response=await handler(req({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'consultar_cfop',arguments:{cfop:'1403'}}}));
  const body=await response.json();assert.equal(body.result.content.length,1);assert.equal(body.result.structuredContent,undefined);
  assert.match(JSON.parse(body.result.content[0].text).descricao,/Compra para comercializa/);
@@ -79,6 +79,34 @@ test('aproximacao tolera erros sem converter codigos ou ignorar qualificadores',
  assert.ok(callTool('consultar_cest',{descricao:'cerveja sem alcool'}).candidatos.every(r=>/sem álcool/i.test(r.descricao)));
  assert.equal(callTool('consultar_cest',{ncm:'33051001'}).total,0); // NCM não recebe aproximação.
 });
+test('correlacao apresenta candidatos de xampu sem inventar classificacao ou ST',()=>{
+ const result=callTool('correlacionar_dados_fiscais',{descricao_produto:'xampu'});
+ assert.deepEqual(result.consultas.cest.candidatos.map(r=>r.cest),['20.017.00','28.011.00']);
+ assert.ok(result.confirmar.some(p=>p.includes('NCM')));
+ assert.ok(result.confirmar.some(p=>p.includes('porta a porta')));
+ assert.equal(result.consultas.cfop,undefined);
+ assert.match(result.limites,/contabilidade/);
+ const narrowed=callTool('correlacionar_dados_fiscais',{descricao_produto:'xampu',ncm:'33051000',modalidade_venda:'outras'});
+ assert.deepEqual(narrowed.consultas.cest.candidatos.map(r=>r.cest),['20.017.00']);
+ assert.match(narrowed.ncm.situacao,/não verificada/);
+});
+test('correlacao confere codigos da operacao sem declarar enquadramento',()=>{
+ const result=callTool('correlacionar_dados_fiscais',{cfop:'5.202',cst_icms:'090',csosn:'900',cst_pis:'49',regime:'simples_nacional'});
+ assert.match(result.consultas.cfop.descricao,/Devolução de compra/);
+ assert.equal(result.consultas.cst_icms.codigo,'090');
+ assert.equal(result.consultas.csosn.codigo,'900');
+ assert.ok(result.confirmar.some(p=>p.includes('campos distintos')));
+ assert.ok(!JSON.stringify(result).includes('alíquota de 0'));
+ assert.throws(()=>callTool('correlacionar_dados_fiscais',{regime:'simples_nacional'}));
+ assert.throws(()=>callTool('correlacionar_dados_fiscais',{descricao_produto:'xampu',cnpj:'123'}));
+ assert.ok(callTool('correlacionar_dados_fiscais',{cst_icms:'12'}).confirmar.some(p=>p.includes('não está ativo')));
+});
+test('nova ferramenta atende pelo transporte MCP',async()=>{
+ const response=await handler(req({jsonrpc:'2.0',id:2,method:'tools/call',params:{name:'correlacionar_dados_fiscais',arguments:{descricao_produto:'xampu'}}}));
+ const body=await response.json();
+ assert.equal(response.status,200);
+ assert.equal(JSON.parse(body.result.content[0].text).consultas.cest.candidatos.length,2);
+});
 test('HTTP e autenticacao',async()=>{
  assert.equal((await handler(new Request('http://localhost/mcp',{method:'POST',headers,body:'{'}))).status,400);
  assert.equal((await handler(req({x:'x'.repeat(9000)}))).status,413);
@@ -95,3 +123,4 @@ test('falha de atualizacao conserva a ultima referencia validada',async()=>{
  assert.match(callTool('consultar_cfop',{cfop:'1403'}).descricao,/Compra para comercializa/);
  }finally{globalThis.fetch=original;if(previous===undefined)delete process.env.TABLES_AUTO_UPDATE;else process.env.TABLES_AUTO_UPDATE=previous;}
 });
+
