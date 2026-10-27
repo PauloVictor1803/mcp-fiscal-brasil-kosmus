@@ -1,5 +1,7 @@
 # Reforço do guia fiscal e reteste do rascunho 70 — 27/10/2026
 
+**Estado posterior confirmado:** Paulo autorizou a ativação e a versão 70 está no ar desde 27/10/2026, preservando o Jev da 69 e sem novos testes pagos. Veja o [registro de ativação](ATIVACAO-TINA-70-2026-10-27.md). O estado de rascunho descrito abaixo é o histórico anterior à ativação.
+
 ## O que mudou
 
 Paulo autorizou melhorar o comportamento após o rascunho 70 passar Regime Normal e devolver fallback no Simples. A investigação confirmou que as regras fixas exigem que orientações do sistema venham do conteúdo retornado pelas ferramentas da base. A skill, sozinha, não substitui esse fundamento. Isso é uma constatação sobre as instruções, não prova de que o Jev foi a causa do fallback anterior.
