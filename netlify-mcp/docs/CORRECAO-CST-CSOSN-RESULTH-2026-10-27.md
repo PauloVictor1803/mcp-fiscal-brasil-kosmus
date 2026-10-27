@@ -2,6 +2,10 @@
 
 Publicada em 27/10/2026 na base Tina, por solicitação do Paulo.
 
+## Resultado posterior: comportamento ainda pendente
+
+Após autorização específica do Paulo, foram executados dois retestes na Tina ativa 68. Ambos reprovaram, com falhas visíveis nas respostas: a Tina ainda orientou trocar CSOSN por CST no Regime Normal e não reconheceu adequadamente o CST obrigatório no Simples. A publicação das páginas foi concluída, mas não resolveu sozinha o comportamento do agente. Custo total da rodada: US$ 0,00934220. Nenhuma repetição paga ou alteração de configuração foi feita. Veja o [relatório dos retestes](RETESTE-CST-CSOSN-TINA-68-2026-10-27.md). As verificações descritas abaixo correspondem à publicação, anterior a esse novo lote pago.
+
 ## Problema corrigido
 
 Duas páginas de entrada de NF via XML continham uma regra absoluta de exclusividade entre CST e CSOSN, sem distinguir os campos do Resulth da tributação transmitida no documento. Isso contrariava a particularidade informada pelo Paulo e já descrita na skill fiscal: algumas rotinas podem exigir CST no Simples Nacional e CSOSN no Regime Normal.
