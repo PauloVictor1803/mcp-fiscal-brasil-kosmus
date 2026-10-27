@@ -2,6 +2,12 @@
 
 Documentação consolidada em 27/10/2026. Os testes e tempos abaixo foram obtidos em 26/10; não representam nova execução em 27/10.
 
+## Atualização de 27/10/2026: teste real da Tina 68
+
+A configuração 68 ativa foi lida e validada sem erros: servidor fiscal_ats com as seis ferramentas e skill fiscal com o bloco ICMS. Após autorização específica do Paulo, foram executados quatro cenários, uma vez cada. Todos usaram a ferramenta; o avaliador aprovou 2/4. O custo total informado foi US$ 0,00780635, sem 504. As respostas visíveis dos dois casos reprovados parecem atender ao objetivo, mas a causa das notas não foi determinada. Não houve repetição paga nem mudança de configuração. Leia as [evidências e ressalvas dos testes](TESTES-ICMS-TINA-68-2026-10-27.md).
+
+As seções seguintes descrevem a entrega inicial de 26/10; suas pendências de confirmação e ausência de teste pago eram o estado daquela entrega e foram parcialmente superadas pela verificação acima.
+
 ## O que foi entregue
 
 | Item | Estado comprovado nesta entrega |
