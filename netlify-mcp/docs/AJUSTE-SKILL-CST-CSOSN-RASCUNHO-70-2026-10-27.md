@@ -1,5 +1,7 @@
 # Ajuste da skill fiscal: rascunho 70 e reteste — 27/10/2026
 
+**Resultado posterior:** após reforço publicado no guia fiscal, uma nova rodada autorizada do rascunho 70 aprovou os dois cenários (2/2). Consulte o [relatório atualizado](REFORCO-GUIA-CST-CSOSN-RETESTE-70-2026-10-27.md). O resultado 1/2 abaixo foi preservado como histórico da rodada anterior.
+
 ## Autorização e estado
 
 Paulo autorizou aplicar o trecho aprovado na skill e testar novamente os mesmos dois cenários. Foram informados o escopo de duas execuções, uma por cenário, estimativa US$ 0,005–0,03 e ausência de ativação automática. Não houve repetição paga.
