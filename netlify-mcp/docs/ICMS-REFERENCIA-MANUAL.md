@@ -1,5 +1,7 @@
 # Tabela manual de referência de ICMS
 
+Resumo da entrega, configurações do servidor, textos do prompt/skill e pendências: [RESUMO-ENTREGA-FISCAL-2026-10-26.md](RESUMO-ENTREGA-FISCAL-2026-10-26.md).
+
 Criada em 26/10/2026 a pedido do Paulo, usando a matriz TaxGroup enviada na conversa.
 
 ## Arquivos e leitura
