@@ -1,0 +1,102 @@
+{
+  "fonte_tabelas": "https://raw.githubusercontent.com/PauloVictor1803/mcp-fiscal-brasil-kosmus/main/netlify-mcp/data/tabelas.json",
+  "referencia": "2026-10-28",
+  "sha256_tabelas": "0b1719a2cbf90ed533e84b9a23c5c1890d06ebc593b21143b2d0dc199cffa3d4",
+  "arquivos": [
+    {
+      "arquivo": "netlify.toml",
+      "bytes": 155,
+      "sha256": "f1069a59668cea0839afefc99d4c68d5828a9fb0ec4cdb707eff94378d814b8e"
+    },
+    {
+      "arquivo": "package.json",
+      "bytes": 222,
+      "sha256": "75142e9c14dc6a1312abd959a6fed7d7ceb481fe64fc4b93baa86ad0cec9c7b8"
+    },
+    {
+      "arquivo": "data/icms-referencia-manual.csv",
+      "bytes": 2281,
+      "sha256": "765aa99c5b94bb0a9a0edee4ae20a2a06b4ff2f04dcbb2c85526e3536a9efb2f"
+    },
+    {
+      "arquivo": "data/icms-referencia-manual.json",
+      "bytes": 13156,
+      "sha256": "e150f3940ed67f4cef66e2d6bba0a3429d7ce953a75586037cfca764c2eda195"
+    },
+    {
+      "arquivo": "data/icms-referencia-manual.metadata.json",
+      "bytes": 1052,
+      "sha256": "fedb2e0d58cdc16258661dd0f4451cc087ca5b28d6ec5819aa71957c7c3c64dd"
+    },
+    {
+      "arquivo": "data/segmentos-cest.json",
+      "bytes": 1241,
+      "sha256": "4fc1a2385ae92901fc36a8989c913814245d44fb86fff0988ca9d6117860cf21"
+    },
+    {
+      "arquivo": "data/tabelas.json",
+      "bytes": 390395,
+      "sha256": "0b1719a2cbf90ed533e84b9a23c5c1890d06ebc593b21143b2d0dc199cffa3d4"
+    },
+    {
+      "arquivo": "public/app.js",
+      "bytes": 26918,
+      "sha256": "affac3a6b901d601d15792a1f2cd299b9d656606eb67595f4d84b90e4d74b04c"
+    },
+    {
+      "arquivo": "public/fiscal-icon.png",
+      "bytes": 492994,
+      "sha256": "dd06820ec8182f9aade4aedb2385ff5b994deab0d87afaa6290ccf7ee78fdef5"
+    },
+    {
+      "arquivo": "public/index.html",
+      "bytes": 7034,
+      "sha256": "4288f9390812b52354cc9e8bbb92823bb82ff8236451d7135e53b3c7606b78ac"
+    },
+    {
+      "arquivo": "public/INSTRUCOES_AGENTE.md",
+      "bytes": 7455,
+      "sha256": "ad36e3b9dbbe97172b3b197fdadc5fee804715964793d5b836b8578172ce8023"
+    },
+    {
+      "arquivo": "public/styles.css",
+      "bytes": 18364,
+      "sha256": "9845a869d61aa40f6a4ce2887e9537b06ac07b779d5a4bc375d30b2eb24b91b7"
+    },
+    {
+      "arquivo": "src/fiscal.js",
+      "bytes": 22234,
+      "sha256": "3eec802fd934d76ba0ee33baeb04485c694d5bcc160716c8afd40ab2a29d8cf5"
+    },
+    {
+      "arquivo": "src/icms.js",
+      "bytes": 1845,
+      "sha256": "11a5752e4eb58efff93494df2e710afa005660a1155a0f7b61b7c306b7c266b5"
+    },
+    {
+      "arquivo": "test/contexto-fiscal.test.js",
+      "bytes": 2345,
+      "sha256": "e9d1ac5f5c99fd2af1ddb2fa70f1bc9543121b9792d934971c144c9501103b28"
+    },
+    {
+      "arquivo": "test/icms.test.js",
+      "bytes": 3770,
+      "sha256": "dd2fbba4f973f0da5e9e10e9e3df4b74dcc9ed796964f2b8c7f348e701bc04eb"
+    },
+    {
+      "arquivo": "test/mcp.test.js",
+      "bytes": 9645,
+      "sha256": "f6c3215b76ead8a3f2efd5e6b9edf3f588780bc96e4c7d7c73c32834e9a1d32c"
+    },
+    {
+      "arquivo": "test/resulth-codes.test.js",
+      "bytes": 3327,
+      "sha256": "0b515fbcd78233adb13773fdeb0b7edacbc4cd2a91ff741e0c54ef2ac54e36db"
+    },
+    {
+      "arquivo": "netlify/functions/mcp.js",
+      "bytes": 4968,
+      "sha256": "c947d50b8f8ba2cb10cfe438b16e4d6eab8bc21235eda8da20d47e3f1bae7495"
+    }
+  ]
+}

@@ -24,3 +24,6 @@ Acompanhar [issue #1 no Monitor SEFAZ](https://github.com/PauloVictor1803/sefaz-
 
 ## Continuidade fiscal após os testes
 Compatibilidade de zeros CST/CSOSN e precisão CEST/PIS/COFINS preparadas. Rascunho Tina 74 validado; seis testes pagos autorizados concluídos, aprovados pelo avaliador, custo US$ 0,01147539. Ativa preservada em 72. Concisão ainda pendente em três respostas. Ver netlify-mcp/docs/MELHORIAS-FISCAIS-RETESTE-2026-10-28.md. Sem deploy ou ativação. O checkpoint inclui as dependências da consulta de ICMS já existente localmente para manter o painel com seis ferramentas executável.
+
+## Publicação confirmada
+Fiscal publicado no deploy 6ae242a42f2a3c8c50312aba e Tina 76 ativa, sem forçar. A autenticação existente foi preservada; novas chaves seguem pendentes na issue #1 do Monitor. Ver netlify-mcp/docs/PUBLICACAO-FISCAL-TINA-76-2026-10-28.md. Monitor e Consulta IE não foram publicados.
