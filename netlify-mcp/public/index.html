@@ -1,40 +1,30 @@
 <!doctype html>
-<html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width">
-<title>ATS Fiscal MCP — Piloto</title>
-<style>body{font:17px system-ui;max-width:760px;margin:45px auto;padding:20px;line-height:1.6;color:#173042}code{background:#eef3f6;padding:3px 6px}label{display:block;margin-top:14px}input,select,button{font:inherit;padding:10px;border:1px solid #b9cbd6;border-radius:6px}input,select{box-sizing:border-box;width:100%}button{margin-top:20px;background:#136c69;color:white;cursor:pointer}pre{background:#eef3f6;padding:20px;white-space:pre-wrap;overflow-wrap:anywhere}small{color:#526572}</style>
-<h1>ATS Fiscal MCP — Piloto</h1>
-<p>CFOP, CST/CSOSN e CEST em fontes oficiais, com validação matemática de chave NF-e/NFC-e.</p>
-<p>Endpoint: <code>/mcp</code> · Streamable HTTP com respostas JSON · Autenticação Bearer.</p>
-<p>Os dados do fork foram substituídos por referências oficiais do CONFAZ e do manual NF-e.
-A atualização automática está em validação por falha de acesso ao CONFAZ. A consulta informa referência, revogações e vigências futuras;
-não determina o enquadramento tributário. NCM continua na consulta Siscomex existente.
-O CEST também pode ser pesquisado por descrição ou NCM, com candidatos e condições a confirmar.</p>
-<h2>Testar uma consulta</h2>
-<form id="teste">
-<label>Token de acesso <input id="token" type="password" autocomplete="off" placeholder="AUTH_TOKEN configurado na Netlify"></label>
-<small>Usado somente na requisição. Não é gravado no navegador.</small>
-<label>Ferramenta <select id="tool"><option value="validar_chave_nfe">Validar chave NF-e/NFC-e</option><option value="consultar_cfop">Consultar CFOP</option><option value="validar_cst">Consultar CST/CSOSN</option><option value="consultar_cest">Consultar CEST</option><option value="correlacionar_dados_fiscais">Cruzar dados fiscais</option></select></label>
-<label><span id="campo">Chave com 44 dígitos</span> <input id="codigo" type="text" maxlength="80" required></label>
-<label id="cest-modo-label" hidden>Pesquisar CEST por <select id="cest-modo"><option value="descricao">Descrição do produto</option><option value="ncm">NCM</option><option value="cest">Código CEST</option></select></label>
-<label id="tributo-label" hidden>Tributo <select id="tributo"><option>ICMS</option><option>CSOSN</option><option>IPI</option><option>PIS</option><option>COFINS</option></select></label>
-<div id="correlacao-campos" hidden>
-<p><small>Informe só os dados que você já confirmou. Os códigos são candidatos para conferência, não uma escolha automática de tributação.</small></p>
-<label>NCM confirmado em consulta separada <input id="ncm" inputmode="numeric" maxlength="10" placeholder="Opcional"></label>
-<label>Modalidade da venda <select id="modalidade_venda"><option value="">Não informada</option><option value="outras">Outras</option><option value="porta_a_porta">Porta a porta</option></select></label>
-<label>CFOP candidato <input id="cfop" maxlength="5" placeholder="Opcional, por exemplo 5.202"></label>
-<label>CST ICMS candidato <input id="cst_icms" maxlength="3" placeholder="Opcional"></label>
-<label>CSOSN candidato <input id="csosn" maxlength="3" placeholder="Opcional"></label>
-<label>Regime do emitente <select id="regime"><option value="">Não informado</option><option value="simples_nacional">Simples Nacional</option><option value="regime_normal">Regime normal</option><option value="nao_confirmado">Ainda não confirmado</option></select></label>
-<details><summary>Outros códigos candidatos</summary>
-<label>CST IPI <input id="cst_ipi" maxlength="2" placeholder="Opcional"></label>
-<label>CST PIS <input id="cst_pis" maxlength="2" placeholder="Opcional"></label>
-<label>CST COFINS <input id="cst_cofins" maxlength="2" placeholder="Opcional"></label>
-</details>
-</div>
-<button id="executar">Executar consulta</button>
-</form>
-<pre id="resultado" role="status" aria-live="polite">Selecione uma ferramenta e execute.</pre>
-<script type="module" src="/app.js"></script>
-<style>[hidden]{display:none!important}</style>
-</html>
-
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#122c35"><title>ATS Fiscal — Painel de consultas</title><link rel="icon" type="image/png" href="/fiscal-icon.png"><link rel="stylesheet" href="/styles.css"></head>
+<body>
+<aside class="sidebar">
+<a class="brand" href="/" aria-label="ATS Fiscal, início"><span class="brand-mark"><img src="/fiscal-icon.png" alt="" width="38" height="38"></span><span>Fiscal<span class="brand-caption">INTELIGÊNCIA PARA O SUPORTE</span></span></a>
+<div class="sidebar-divider"></div><div class="nav-label">ÁREA DE TRABALHO</div><nav id="tool-nav" aria-label="Consultas fiscais"></nav>
+<div class="sidebar-note"><span class="note-symbol">i</span><div><strong>Informação para orientar.</strong><p>O enquadramento da operação deve ser confirmado com a contabilidade.</p></div></div>
+<div class="sidebar-footer"><button id="manual-button" class="manual-nav" type="button">Manual para IA <span>↗</span></button><span class="endpoint-tag">MCP</span><span>Uma conexão. Seis ferramentas.</span><code>/mcp</code></div>
+</aside>
+<div class="app-shell">
+<header class="topbar"><div class="breadcrumb">ATS <span>/</span> Fiscal <span>/</span> <strong>Consultas</strong></div><button id="access-button" class="access-button" type="button"><span id="connection-dot" class="status-dot"></span><span id="connection-text">Configurar acesso</span><span aria-hidden="true">↗</span></button></header>
+<main>
+<section class="intro"><div><div class="eyebrow"><span></span> PAINEL FISCAL ATS</div><h1>Menos procura.<br>Mais <span>clareza.</span></h1><p>Consulte códigos, confira informações e encontre<br class="desktop-break"> a referência para o próximo passo.</p></div><div class="intro-art" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="art-card"><span class="art-grid">▦</span><div class="art-line long"></div><div class="art-line"></div><div class="art-divider"></div><div class="art-code">01 <span>→</span> 27</div><div class="art-check">✓</div></div><span class="art-spark">✦</span></div></section>
+<section class="workspace" aria-label="Área de consulta">
+<div class="form-panel panel"><div class="panel-heading"><span id="tool-icon" class="tool-icon"></span><span class="section-number">01 / CONSULTAR</span></div><h2 id="tool-title"></h2><p id="tool-description" class="panel-description"></p>
+<form id="query-form"><div id="tool-fields"></div><div class="form-actions"><button id="submit-button" class="primary-button" type="submit"><span id="submit-label">Consultar referência</span><span id="submit-arrow" aria-hidden="true">↗</span></button><button id="example-button" type="button" class="text-button">Usar exemplo</button></div></form><div class="form-footnote"><span aria-hidden="true">↳</span><span id="tool-footnote"></span></div></div>
+<div id="result-panel" class="result-panel panel" aria-busy="false"><div class="result-heading"><span class="section-number">02 / RESULTADO</span><button id="copy-result" class="copy-button" type="button" hidden>Copiar JSON <span aria-hidden="true">⧉</span></button></div><div id="result" aria-live="polite" aria-atomic="true"></div></div>
+</section>
+<section class="reference-strip" aria-label="Sobre as referências"><span class="reference-icon" aria-hidden="true">⌘</span><div><strong>Fontes e limites, sempre à vista.</strong><p>CFOP, CEST e CST/CSOSN usam referências oficiais. O ICMS por UF usa uma tabela manual de 2026. Confira a data e os avisos de cada resultado.</p></div><button id="about-button" type="button" class="text-button">Entenda as consultas <span aria-hidden="true">↗</span></button></section>
+<footer class="page-footer"><span>ATS Informática <span class="footer-dot">·</span> Ferramentas fiscais</span><span>Feito para facilitar a conferência.</span></footer>
+</main></div>
+<dialog id="access-dialog" aria-labelledby="access-title"><div class="dialog-header"><span class="section-number">CONEXÃO SEGURA</span><button type="button" class="close-button" data-close="access-dialog" aria-label="Fechar">×</button></div><h2 id="access-title">Acesso ao painel</h2><p>Informe o token configurado no servidor para autorizar as consultas.</p>
+<label for="token">Token de acesso</label><div class="password-field"><input id="token" type="password" autocomplete="off" spellcheck="false" placeholder="Cole seu token de acesso"><button type="button" id="toggle-token" aria-label="Mostrar token" aria-pressed="false">Mostrar</button></div><p class="field-help">O token fica somente nesta página aberta. Não é salvo no navegador nem incluído no resultado.</p><p id="connection-feedback" class="connection-feedback" role="status"></p><button id="test-connection" class="primary-button" type="button">Testar conexão <span aria-hidden="true">↗</span></button><button type="button" class="dialog-done text-button" data-close="access-dialog">Voltar à consulta</button></dialog>
+<dialog id="about-dialog" aria-labelledby="about-title"><div class="dialog-header"><span class="section-number">SOBRE AS CONSULTAS</span><button type="button" class="close-button" data-close="about-dialog" aria-label="Fechar">×</button></div><h2 id="about-title">Referência com contexto.</h2>
+<div class="about-item"><strong>Catálogos fiscais</strong><p>As consultas apresentam descrições, candidatos e situações das tabelas. Um código encontrado não determina sua aplicação à operação. O NCM deve ser conferido na consulta Siscomex existente.</p></div>
+<div class="about-item"><strong>ICMS entre estados</strong><p>A matriz de 2026 é mantida manualmente. Não acompanha automaticamente mudanças legais. Alguns percentuais internos podem incluir FCP; não os lance automaticamente como ICMS.</p></div>
+<div class="about-item"><strong>Chave de nota fiscal</strong><p>A validação confere formato e dígito verificador. Não consulta a autorização ou a situação da nota na SEFAZ.</p></div>
+<div class="about-item"><strong>Próximo passo</strong><p>Confirme o enquadramento, a base e os impostos com a contabilidade antes da emissão. A consulta apoia a orientação e não substitui essa confirmação.</p></div></dialog>
+<dialog id="manual-dialog" aria-labelledby="manual-title"><div class="dialog-header"><span class="section-number">INSTRUÇÕES EM MARKDOWN</span><button type="button" class="close-button" data-close="manual-dialog" aria-label="Fechar">×</button></div><h2 id="manual-title">Manual para IA</h2><p>Ferramentas, parâmetros, exemplos e limites para orientar seu agente.</p><div class="manual-actions"><a href="/INSTRUCOES_AGENTE.md" download>Baixar .MD ↓</a><button id="copy-manual" type="button">Copiar manual ⧉</button></div><pre id="manual-content">Carregando manual…</pre><p id="manual-feedback" role="status"></p></dialog>
+<script type="module" src="/app.js"></script></body></html>
