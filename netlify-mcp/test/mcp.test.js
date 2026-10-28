@@ -7,7 +7,7 @@ const chave='35240112345678000195550010000001231000000011';
 const headers={'content-type':'application/json',accept:'application/json, text/event-stream'};
 const req=(body,extra={})=>new Request('http://localhost/mcp',{method:'POST',headers:{...headers,...extra},body:JSON.stringify(body)});
 test('catalogo MCP e transporte',async()=>{
- assert.equal(tools.length,5);assert.ok(Buffer.byteLength(JSON.stringify({tools}))<5000);
+ assert.equal(tools.length,6);assert.ok(Buffer.byteLength(JSON.stringify({tools}))<6500);
  const response=await handler(req({jsonrpc:'2.0',id:1,method:'tools/call',params:{name:'consultar_cfop',arguments:{cfop:'1403'}}}));
  const body=await response.json();assert.equal(body.result.content.length,1);assert.equal(body.result.structuredContent,undefined);
  assert.match(JSON.parse(body.result.content[0].text).descricao,/Compra para comercializa/);
@@ -123,4 +123,3 @@ test('falha de atualizacao conserva a ultima referencia validada',async()=>{
  assert.match(callTool('consultar_cfop',{cfop:'1403'}).descricao,/Compra para comercializa/);
  }finally{globalThis.fetch=original;if(previous===undefined)delete process.env.TABLES_AUTO_UPDATE;else process.env.TABLES_AUTO_UPDATE=previous;}
 });
-

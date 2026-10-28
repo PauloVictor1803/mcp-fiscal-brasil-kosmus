@@ -152,6 +152,20 @@ def note_dates(text):
         end = datetime.strptime('.'.join(interval.groups()[3:]), '%d.%m.%y' if len(interval[6]) == 2 else '%d.%m.%Y').date()
     return start, end
 
+def parse_cest_segments(document):
+    """Lê o código da última coluna, que não equivale ao número do item."""
+    segments = {}
+    for tr in document.find('table').find_all('tr'):
+        cells = [clean(c.get_text(' ', strip=True)) for c in tr.find_all(['td', 'th'])]
+        if len(cells) == 3 and re.fullmatch(r'\d{2}', cells[2]):
+            if cells[2] in segments or not cells[1]:
+                raise ValueError('Segmento CEST duplicado ou sem descrição')
+            segments[cells[2]] = cells[1]
+    if not 25 <= len(segments) <= 40 or segments.get('01') != 'Autopeças':
+        raise ValueError('Estrutura dos segmentos CEST mudou')
+    return segments
+
+
 def parse_cest(document, reference):
     tables = document.find_all('table')
     main = []
@@ -263,7 +277,7 @@ def rebuild(directory, reference):
     cest = parse_cest(cest_doc, reference)
     icms, csosn, origins = parse_icms_csosn(sinief_doc)
     ipi, pis, cofins = parse_ipi_pis_cofins(directory / 'moc.pdf')
-    result = {'CFOP_TABLE': cfop, 'CEST': cest, 'CST_ICMS': icms, 'CSOSN_TABLE': csosn,
+    result = {'CFOP_TABLE': cfop, 'CEST': cest, 'CEST_SEGMENTOS': parse_cest_segments(cest_doc), 'CST_ICMS': icms, 'CSOSN_TABLE': csosn,
               'ORIGENS': origins, 'CST_IPI': ipi, 'CST_PIS': pis, 'CST_COFINS': cofins}
     result['metadata'] = {'validacao': 'aprovada', 'data_referencia': reference.isoformat(),
         'natureza': 'consulta de referência documental; não define enquadramento tributário',

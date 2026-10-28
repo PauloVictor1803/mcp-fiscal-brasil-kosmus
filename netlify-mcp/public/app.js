@@ -37,7 +37,7 @@ const tools = {
   validar_cst: {
     label: 'CST e CSOSN', icon: 'taxes', title: 'Confira o código tributário', description: 'Consulte a descrição do CST ou CSOSN na tabela do tributo informado.',
     footnote: 'O código é conferido na tabela. Sua aplicação depende da operação e da orientação contábil.', button: 'Consultar código',
-    fields: [select('tributo', 'Tributo', ['ICMS','CSOSN','IPI','PIS','COFINS'].map(x => choice(x))), input('cst', 'Código CST / CSOSN', { placeholder: 'Ex.: 000', required: true, pattern: '[0-9]{2,3}', maxLength: 3, inputMode: 'numeric', help: 'Preserve os zeros à esquerda.' })], example: { tributo: 'ICMS', cst: '000' },
+    fields: [select('tributo', 'Tributo', ['ICMS','CSOSN','IPI','PIS','COFINS'].map(x => choice(x))), input('cst', 'Código CST / CSOSN', { placeholder: 'Ex.: 060 ou 0500', required: true, pattern: '[0-9]{2,4}', maxLength: 4, inputMode: 'numeric', help: 'Resulth: CST 060/090 e CSOSN 0500/0900. Preserve os zeros.' })], example: { tributo: 'ICMS', cst: '000' },
   },
   validar_chave_nfe: {
     label: 'Chave NF-e / NFC-e', icon: 'key', title: 'Confira a chave da nota', description: 'Verifique o formato e o dígito de uma chave de acesso, sem consultar a autorização da nota.',
@@ -48,7 +48,7 @@ const tools = {
   correlacionar_dados_fiscais: {
     label: 'Conferência conjunta', icon: 'cross', title: 'Reúna os dados fiscais', description: 'Compare os códigos e os candidatos de um produto em uma consulta. Preencha somente o que já sabe.',
     footnote: 'A conferência não escolhe a tributação nem converte CST em CSOSN.', button: 'Conferir informações',
-    fields: [input('descricao_produto', 'Descrição do produto', { optional: true, full: true, maxLength: 120, placeholder: 'Ex.: xampu de uso pessoal' }), input('ncm', 'NCM confirmado', { optional: true, inputMode: 'numeric', maxLength: 10, placeholder: 'Ex.: 33051000' }), select('regime', 'Regime do emitente', [choice('', 'Não informado'), choice('simples_nacional', 'Simples Nacional'), choice('regime_normal', 'Regime normal'), choice('nao_confirmado', 'Ainda não confirmado')], { optional: true }), input('cfop', 'CFOP candidato', { optional: true, maxLength: 5, placeholder: 'Ex.: 5.102' }), input('cst_icms', 'CST ICMS', { optional: true, maxLength: 3, placeholder: 'Ex.: 000' }), input('csosn', 'CSOSN', { optional: true, maxLength: 3, placeholder: 'Ex.: 102' }), modality],
+    fields: [input('descricao_produto', 'Descrição do produto', { optional: true, full: true, maxLength: 120, placeholder: 'Ex.: xampu de uso pessoal' }), input('ncm', 'NCM confirmado', { optional: true, inputMode: 'numeric', maxLength: 10, placeholder: 'Ex.: 33051000' }), select('regime', 'Regime do emitente', [choice('', 'Não informado'), choice('simples_nacional', 'Simples Nacional'), choice('regime_normal', 'Regime normal'), choice('nao_confirmado', 'Ainda não confirmado')], { optional: true }), input('cfop', 'CFOP candidato', { optional: true, maxLength: 5, placeholder: 'Ex.: 5.102' }), input('cst_icms', 'CST ICMS', { optional: true, maxLength: 3, placeholder: 'Ex.: 000' }), input('csosn', 'CSOSN', { optional: true, maxLength: 4, placeholder: 'Ex.: 0500 ou 0900' }), modality],
     advanced: ['IPI','PIS','COFINS'].map(x => input(`cst_${x.toLowerCase()}`, `CST ${x}`, { optional: true, maxLength: 2, inputMode: 'numeric' })),
     example: { descricao_produto: 'xampu', ncm: '33051000', cfop: '5.102', regime: '', cst_icms: '', csosn: '', modalidade_venda: '' },
   },
@@ -119,7 +119,7 @@ function lookup(parent, data) {
   const badges = el('div', 'result-badges'); badge(badges, data.encontrado === false ? 'Não localizado' : (status[data.status] || 'Código localizado'), data.encontrado === false || (data.status && data.status !== 'ativo') ? 'warning' : ''); parent.append(badges);
   if (data.codigo) { const displayCode = String(data.codigo).length === 7 ? String(data.codigo).replace(/^(\d{2})(\d{3})(\d{2})$/, '$1.$2.$3') : data.codigo; parent.append(el('div', 'result-value code', displayCode)); }
   if (data.descricao || data.motivo) parent.append(el('p', 'result-description', data.descricao || data.motivo));
-  metadata(parent, [['Tributo', data.tributo], ['Operação', data.tipo], ['Âmbito', data.ambito], ['Origem', data.origem], ['NCM/SH', data.ncm_sh], ['Início da vigência', data.inicio]]);
+  metadata(parent, [['Tributo', data.tributo], ['Código na tabela', data.codigo_tabela], ['Formato no Resulth', data.codigo_resulth], ['Operação', data.tipo], ['Âmbito', data.ambito], ['Origem', data.origem], ['NCM/SH', data.ncm_sh], ['Início da vigência', data.inicio]]);
   if (data.aviso) notice(parent, data.aviso);
 }
 function renderResult(data, name) {

@@ -1,5 +1,7 @@
 // Transporte inspirado no MCP Fiscal Brasil (MIT). Dados reconstruídos em fontes oficiais.
 import bundledData from '../data/tabelas.json' with { type: 'json' };
+import bundledSegments from '../data/segmentos-cest.json' with { type: 'json' };
+import { consultarAliquotaICMS, icmsUFs } from './icms.js';
 let data = bundledData;
 let nextCheck = 0;
 let etag;
@@ -40,12 +42,19 @@ const code = (description, pattern) => ({ type: 'string', description, pattern, 
 const annotations = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 
 const declaredTools = [
+  { name: 'consultar_aliquota_icms', description: 'Consulta referência geral de ICMS por UF de origem e destino na tabela manual TaxGroup/ATS 2026. Interna pode incluir FCP. Não define base, importados, DIFAL ou enquadramento; confirme com a contabilidade.',
+    inputSchema: schema({
+      uf_origem: { type: 'string', enum: icmsUFs, description: 'UF do emitente, obtida do cadastro disponível.' },
+      uf_destino: { type: 'string', enum: icmsUFs, description: 'UF do destinatário desta operação.' },
+      ano: { type: 'string', pattern: '^[0-9]{4}$', description: 'Ano da operação; padrão: ano corrente. Não usa tabela de outro ano.' },
+      origem_mercadoria: { type: 'string', enum: ['nacional', 'importada', 'nao_informada'] },
+    }, ['uf_origem', 'uf_destino']), annotations },
   { name: 'consultar_cfop', description: 'Consulta a descrição de um CFOP informado; não escolhe o enquadramento.',
     inputSchema: schema({ cfop: code('Código de 4 dígitos; aceita 5.102.', '^\\s*[123567]\\.?[0-9]{3}\\s*$') }, ['cfop']), annotations },
   { name: 'validar_chave_nfe', description: 'Confere formato e dígito da chave NF-e/NFC-e; não consulta autorização.',
     inputSchema: schema({ chave: code('44 dígitos; aceita espaços entre grupos.', '^[0-9\\s]{44,80}$') }, ['chave']), annotations },
   { name: 'validar_cst', description: 'Consulta CST/CSOSN na tabela do tributo informado; não valida sua aplicação à operação.',
-    inputSchema: schema({ cst: code('ICMS: CST com 2 ou origem+CST com 3 dígitos. CSOSN: 3. Demais: 2.', '^[0-9]{2,3}$'),
+    inputSchema: schema({ cst: code('ICMS: 2 ou 3 dígitos com origem. CSOSN: 3 ou 4 no Resulth (0500, 0900). Demais: 2.', '^[0-9]{2,4}$'),
       tributo: { type: 'string', enum: ['ICMS', 'CSOSN', 'IPI', 'PIS', 'COFINS'] } }, ['cst', 'tributo']), annotations },
   { name: 'consultar_cest', description: 'Busca CEST por descrição (aceita aproximação), NCM ou código CEST. Retorna candidatos e condições a confirmar; não determina ST.',
     inputSchema: schema({ cest: code('CEST conhecido; use sozinho.', '^\\s*[0-9]{2}\\.?[0-9]{3}\\.?[0-9]{2}\\s*$'),
@@ -59,7 +68,7 @@ const declaredTools = [
       modalidade_venda: { type: 'string', enum: ['porta_a_porta', 'outras'], description: 'Somente se a modalidade foi confirmada.' },
       cfop: code('CFOP candidato obtido da base ATS ou do documento da operação.', '^\\s*[123567]\\.?[0-9]{3}\\s*$'),
       cst_icms: code('CST ICMS candidato, com 2 ou 3 dígitos.', '^[0-9]{2,3}$'),
-      csosn: code('CSOSN candidato de 3 dígitos.', '^[0-9]{3}$'),
+      csosn: code('CSOSN de 3 dígitos ou formato Resulth com zero à esquerda (0500, 0900).', '^(?:[0-9]{3}|0[0-9]{3})$'),
       cst_ipi: code('CST IPI candidato de 2 dígitos.', '^[0-9]{2}$'),
       cst_pis: code('CST PIS candidato de 2 dígitos.', '^[0-9]{2}$'),
       cst_cofins: code('CST COFINS candidato de 2 dígitos.', '^[0-9]{2}$'),
@@ -69,7 +78,7 @@ const declaredTools = [
 
 // Falha fechada: revisão técnica do transporte não aprova conteúdo fiscal.
 // Não anuncia tabelas reprovadas ao agente, para evitar chamadas inúteis.
-export const tools = declaredTools.filter(tool => tool.name === 'validar_chave_nfe'
+export const tools = declaredTools.filter(tool => ['validar_chave_nfe', 'consultar_aliquota_icms'].includes(tool.name)
   || data.metadata.validacao === 'aprovada');
 
 export function validateArguments(tool, args) {
@@ -155,6 +164,8 @@ function searchCest(args) {
   const query = terms(args.descricao || '');
   if ((!args.ncm && !query.length) || (args.descricao !== undefined && !query.length)) throw new Error('Informe a descrição do produto ou o NCM.');
   const ncm = args.ncm?.trim().replaceAll('.', '');
+  const airConditioning = query.includes('ar') && query.includes('condicionado');
+  const wholeApplianceQuery = airConditioning && !query.some(t => /^(filtro|tubo|peca|parte|compressor|condensador|evaporador)$/.test(t));
   const today = new Date().toISOString().slice(0, 10);
   let matches = [];
   for (const [codigo, row] of Object.entries(data.CEST)) {
@@ -169,22 +180,26 @@ function searchCest(args) {
     matches.push({ cest: codigo.replace(/^(\d{2})(\d{3})(\d{2})$/, '$1.$2.$3'), descricao: row.descricao,
       ncm_sh: row.ncm_sh_texto_fonte, segmento: codigo.slice(0, 2),
       correspondencia: penalty ? 'aproximada' : 'termos', _penalty: penalty,
-      ...(codigo.startsWith('20') ? { segmento_nome: 'Produtos de perfumaria e de higiene pessoal e cosméticos' } : {}),
+      _accessory: wholeApplianceQuery && /^(filtros?|tubos?|peças?|partes?|compressores?|condensadores?|evaporadores?)\b/.test(normalize(row.descricao || '')) ? 1 : 0,
+      ...((data.CEST_SEGMENTOS || bundledSegments)[codigo.slice(0, 2)] ? { segmento_nome: (data.CEST_SEGMENTOS || bundledSegments)[codigo.slice(0, 2)] } : {}),
       ...(codigo.startsWith('28') ? { condicao: segmentCondition(codigo) } : {}) });
   }
   const bestPenalty = Math.min(...matches.map(m => m._penalty));
   matches = matches.filter(m => m._penalty === bestPenalty);
-  matches.sort((a, b) => a._penalty - b._penalty || a.cest.localeCompare(b.cest));
+  matches.sort((a, b) => a._penalty - b._penalty || a._accessory - b._accessory || a.cest.localeCompare(b.cest));
   const candidatos = [];
   for (const match of matches.slice(0, 6)) {
-    const { _penalty, ...candidate } = match;
+    const { _penalty, _accessory, ...candidate } = match;
     if (Buffer.byteLength(JSON.stringify([...candidatos, candidate])) > 2400) break;
     candidatos.push(candidate);
   }
   const perguntas = [];
   if (candidatos.length && !ncm) perguntas.push('Qual é o NCM confirmado do produto?');
   if (matches.some(m => m.cest.startsWith('28.')) && matches.some(m => !m.cest.startsWith('28.'))) perguntas.push('A operação é venda pelo sistema porta a porta?');
-  if (matches.length > 1) perguntas.push('Qual a apresentação/embalagem e quais as características do produto?');
+  if (matches.length > 1 && wholeApplianceQuery) {
+    perguntas.push('É um aparelho para veículo ou para ambiente (casa/loja)?');
+    if (matches.some(m => m._accessory)) perguntas.push('É o aparelho completo ou uma peça/acessório?');
+  } else if (matches.length > 1) perguntas.push('Qual característica do produto diferencia as descrições encontradas?');
   if (candidatos.length) perguntas.push('A descrição oficial corresponde às características e ao uso do produto?');
   const result = { encontrado: matches.length > 0, candidatos, total: matches.length, mais_resultados: candidatos.length < matches.length,
     ...(perguntas.length ? { confirmar: perguntas } : {}),
@@ -243,6 +258,7 @@ export function callTool(name, args) {
   const tool = tools.find(t => t.name === name);
   if (!tool) throw new Error('Ferramenta desconhecida.');
   validateArguments(tool, args);
+  if (name === 'consultar_aliquota_icms') return consultarAliquotaICMS(args);
   if (name === 'validar_chave_nfe') return validateKey(args.chave);
   if (name === 'correlacionar_dados_fiscais') return correlate(args);
   if (name === 'consultar_cest') {
@@ -256,13 +272,24 @@ export function callTool(name, args) {
   }
   if (name === 'validar_cst') {
     const { cst, tributo } = args;
-    if ((tributo === 'CSOSN' && cst.length !== 3) || (!['ICMS','CSOSN'].includes(tributo) && cst.length !== 2)) throw new Error('Quantidade de dígitos incompatível com o tributo.');
+    if (tributo === 'ICMS' && !/^[0-9]{2,3}$/.test(cst)) throw new Error('ICMS: informe CST de 2 dígitos ou origem+CST de 3 dígitos, como 060 ou 090.');
+    if (tributo === 'CSOSN' && !/^(?:[0-9]{3}|0[0-9]{3})$/.test(cst)) throw new Error('CSOSN: informe 3 dígitos ou o formato Resulth com zero à esquerda, como 0500 ou 0900.');
+    if (!['ICMS','CSOSN'].includes(tributo) && cst.length !== 2) throw new Error('Quantidade de dígitos incompatível com o tributo.');
     const table = tributo === 'ICMS' ? data.CST_ICMS : tributo === 'CSOSN' ? data.CSOSN_TABLE
       : tributo === 'IPI' ? data.CST_IPI : tributo === 'PIS' ? data.CST_PIS : data.CST_COFINS;
-    const codigo = tributo === 'ICMS' ? cst.slice(-2) : cst;
+    // A consulta à tabela não altera o preenchimento informado no ERP.
+    const codigo = tributo === 'ICMS' ? cst.slice(-2) : tributo === 'CSOSN' ? cst.slice(-3) : cst;
     const row = own(table, codigo) ? table[codigo] : null;
     const record = typeof row === 'string' ? { descricao: row, status: 'ativo' } : row;
     const extra = { tributo };
+    if (['PIS', 'COFINS'].includes(tributo)) extra.aviso = 'A descrição do CST não determina incidência, alíquota ou base. CFOP e regime isolados não validam a operação; confirme com a contabilidade.';
+    if (['ICMS', 'CSOSN'].includes(tributo)) {
+      extra.codigo_informado = cst;
+      extra.codigo_tabela = codigo;
+      if (tributo === 'CSOSN') extra.codigo_resulth = cst.padStart(4, '0');
+      // CST de dois dígitos não informa a origem: não presumir origem nacional.
+      else if (cst.length === 3) extra.codigo_resulth = cst;
+    }
     if (tributo === 'ICMS' && cst.length === 3) {
       if (!own(data.ORIGENS, cst[0])) throw new Error('Origem da mercadoria não localizada.');
       extra.origem = data.ORIGENS[cst[0]];
@@ -275,10 +302,11 @@ export function callTool(name, args) {
   if (row?.fim && today > row.fim) return lookupResult('CEST', codigo, { status: 'referencia_expirada', motivo: 'Aguardar atualização da redação oficial.' });
   if (row?.status === 'vigencia_futura' && today >= row.inicio) return lookupResult('CEST', codigo, { status: 'aguardando_atualizacao', inicio: row.inicio });
   return lookupResult('CEST', codigo, row && { status: row.status,
+    segmento: codigo.slice(0, 2),
+    ...((data.CEST_SEGMENTOS || bundledSegments)[codigo.slice(0, 2)] ? { segmento_nome: (data.CEST_SEGMENTOS || bundledSegments)[codigo.slice(0, 2)] } : {}),
     ...(row.descricao ? { descricao: row.descricao, ncm_sh: row.ncm_sh_texto_fonte } : {}),
     ...(row.inicio && row.status === 'vigencia_futura' ? { inicio: row.inicio } : {}),
     ...(row.ncm_sh_requer_conferencia ? { aviso: 'NCM/SH do texto oficial requer conferência no Siscomex.' } : {}) });
 }
 
 export const tableMetadata = data.metadata;
-

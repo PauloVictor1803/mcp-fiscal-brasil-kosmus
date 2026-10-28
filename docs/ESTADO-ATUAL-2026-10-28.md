@@ -22,3 +22,5 @@ Antes de ativar: cobrir MCP e REST, validar chave ausente/incorreta/correta e re
 ## Pendência de tokens
 Acompanhar [issue #1 no Monitor SEFAZ](https://github.com/PauloVictor1803/sefaz-monitor-mcp/issues/1). Issues está desabilitado no repositório Fiscal. Nenhuma chave foi publicada.
 
+## Continuidade fiscal após os testes
+Compatibilidade de zeros CST/CSOSN e precisão CEST/PIS/COFINS preparadas. Rascunho Tina 74 validado; seis testes pagos autorizados concluídos, aprovados pelo avaliador, custo US$ 0,01147539. Ativa preservada em 72. Concisão ainda pendente em três respostas. Ver netlify-mcp/docs/MELHORIAS-FISCAIS-RETESTE-2026-10-28.md. Sem deploy ou ativação. O checkpoint inclui as dependências da consulta de ICMS já existente localmente para manter o painel com seis ferramentas executável.

@@ -90,3 +90,5 @@ A Tina ainda tem filtro com as quatro ferramentas anteriores. Adicionar a nova
 ferramenta ao agente e rodar um atendimento controlado são etapas futuras,
 dependentes da autorização exigida para alterações do agente e testes pagos.
 
+## Compatibilidade de formato do Resulth (28/10/2026)
+A correlação aceita CST ICMS 060/090 e CSOSN 0500/0900. Preserva codigo e codigo_informado e distingue codigo_tabela de codigo_resulth. Consulte FORMATOS-CST-CSOSN-RESULTH-2026-10-28.md para o contrato e a situação da implantação.
