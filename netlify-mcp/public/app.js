@@ -5,7 +5,14 @@ const forms = {
   validar_cst: ['cst', 'CST/CSOSN (preserve os zeros)', '000'],
   consultar_cest: ['descricao', 'Produto para buscar CEST', 'xampu'],
   correlacionar_dados_fiscais: ['descricao_produto', 'Descrição do produto (opcional se informar códigos)', 'xampu'],
+  consultar_aliquota_icms: ['', '', ''],
 };
+for (const id of ['icms-origem', 'icms-destino']) {
+  for (const uf of 'AC AL AM AP BA CE DF ES GO MA MT MS MG PA PB PR PE PI RN RS RJ RO RR SC SP SE TO'.split(' ')) {
+    const option = document.createElement('option'); option.value = uf; option.textContent = uf; byId(id).append(option);
+  }
+}
+byId('icms-origem').value = 'MG'; byId('icms-destino').value = 'SP';
 byId('tool').addEventListener('change', () => {
   const [, label, example] = forms[byId('tool').value];
   byId('campo').textContent = label;
@@ -13,7 +20,10 @@ byId('tool').addEventListener('change', () => {
   byId('tributo-label').hidden = byId('tool').value !== 'validar_cst';
   byId('cest-modo-label').hidden = byId('tool').value !== 'consultar_cest';
   byId('correlacao-campos').hidden = byId('tool').value !== 'correlacionar_dados_fiscais';
-  byId('codigo').required = byId('tool').value !== 'correlacionar_dados_fiscais';
+  const icms = byId('tool').value === 'consultar_aliquota_icms';
+  byId('icms-campos').hidden = !icms;
+  byId('codigo').parentElement.hidden = icms;
+  byId('codigo').required = !icms && byId('tool').value !== 'correlacionar_dados_fiscais';
   byId('cest-modo').value = 'descricao';
 });
 byId('cest-modo').addEventListener('change', () => {
@@ -41,7 +51,11 @@ byId('teste').addEventListener('submit', async event => {
     await send('notifications/initialized', {});
     const name = byId('tool').value;
     const field = name === 'consultar_cest' ? byId('cest-modo').value : forms[name][0];
-    const args = name === 'correlacionar_dados_fiscais' ? {} : { [field]: byId('codigo').value };
+    const args = ['correlacionar_dados_fiscais','consultar_aliquota_icms'].includes(name) ? {} : { [field]: byId('codigo').value };
+    if (name === 'consultar_aliquota_icms') {
+      Object.assign(args, {uf_origem: byId('icms-origem').value, uf_destino: byId('icms-destino').value,
+        ano: byId('icms-ano').value, origem_mercadoria: byId('icms-mercadoria').value});
+    }
     if (name === 'correlacionar_dados_fiscais') {
       if (byId('codigo').value.trim()) args.descricao_produto = byId('codigo').value.trim();
       for (const key of ['ncm','modalidade_venda','cfop','cst_icms','csosn','regime','cst_ipi','cst_pis','cst_cofins']) {
@@ -56,4 +70,3 @@ byId('teste').addEventListener('submit', async event => {
   } catch (error) { byId('resultado').textContent = `Erro: ${error.message}`; }
   finally { byId('executar').disabled = false; }
 });
-

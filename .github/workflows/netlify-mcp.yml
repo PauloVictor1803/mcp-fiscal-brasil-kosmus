@@ -14,5 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: node --test test/mcp.test.js
+      - run: node ../scripts/gerar_icms_manual.mjs --check
+        working-directory: netlify-mcp
+      - run: node --test test/*.test.js
         working-directory: netlify-mcp
