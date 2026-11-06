@@ -12071,20 +12071,20 @@
   },
   "metadata": {
     "validacao": "aprovada",
-    "data_referencia": "2026-11-05",
+    "data_referencia": "2026-11-06",
     "natureza": "consulta de referência documental; não define enquadramento tributário",
     "fontes": {
       "cest.html": {
         "url": "https://www.confaz.fazenda.gov.br/legislacao/convenios/2018/CV142_18",
-        "sha256": "e9c0ced067e2475517eadcb01eb07f5a2336ef1f8c55e557db789674a8a8b602"
+        "sha256": "ae6540b124d1be3653d8ec46ce98be0de93c07d8cd457f1107d0cafe90f0d23a"
       },
       "cfop_consolidado.html": {
         "url": "https://www.confaz.fazenda.gov.br/legislacao/ajustes/sinief/cfop_cvsn_1-6.24/",
-        "sha256": "f0b0b728793c0e1e7c8b9c37712c23fe1baa6d61a4fb04215b6a19fcc6e054a9"
+        "sha256": "2d333c80791c0fe0f73e5471d11a235bc5d2d5b2abda9055f2d67a46168ea4c1"
       },
       "sinief_atual.html": {
         "url": "https://www.confaz.fazenda.gov.br/legislacao/ajustes/sinief/cvsn_70",
-        "sha256": "bd994e0464d886f2dacdcdedb5a7bdd9ef6c95e93dce384649c52eff87bd3203"
+        "sha256": "6bddd69c537441eceeb15fd16e160e6bcd60124ef251425a559b8f70dab98f27"
       },
       "moc.pdf": {
         "url": "https://www.confaz.fazenda.gov.br/legislacao/arquivo-manuais/moc7-anexo-i-leiaute-e-rv.pdf",
