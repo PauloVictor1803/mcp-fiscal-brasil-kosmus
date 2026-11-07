@@ -40,4 +40,7 @@ A rotina deve estar presente e habilitada na branch padrao do repositorio.
 Consulta de referencia documental nao define tributacao. A validacao da chave
 confere formato numerico e digito, sem consultar autorizacao da nota na SEFAZ.
 A nova ferramenta ainda nao foi adicionada ao filtro de ferramentas da Tina.
+# Referência manual de ICMS
+
+A ferramenta `consultar_aliquota_icms` consulta um par origem/destino na tabela manual TaxGroup/ATS 2026, com respostas compactas. Consulte [como usar, atualizar pelo Excel e os resultados dos testes](docs/ICMS-REFERENCIA-MANUAL.md). O cadastro da ferramenta no MCP não modifica automaticamente os filtros da Tina.
 
