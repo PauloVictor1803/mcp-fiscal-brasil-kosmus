@@ -9,11 +9,18 @@
 A atualização automática está em validação por falha de acesso ao CONFAZ. A consulta informa referência, revogações e vigências futuras;
 não determina o enquadramento tributário. NCM continua na consulta Siscomex existente.
 O CEST também pode ser pesquisado por descrição ou NCM, com candidatos e condições a confirmar.</p>
+<p>A consulta de ICMS por origem e destino usa uma tabela manual de referência de 2026, transcrita da matriz TaxGroup. Alguns percentuais internos podem incluir FCP. Não define base de cálculo ou enquadramento.</p>
 <h2>Testar uma consulta</h2>
 <form id="teste">
 <label>Token de acesso <input id="token" type="password" autocomplete="off" placeholder="AUTH_TOKEN configurado na Netlify"></label>
 <small>Usado somente na requisição. Não é gravado no navegador.</small>
-<label>Ferramenta <select id="tool"><option value="validar_chave_nfe">Validar chave NF-e/NFC-e</option><option value="consultar_cfop">Consultar CFOP</option><option value="validar_cst">Consultar CST/CSOSN</option><option value="consultar_cest">Consultar CEST</option><option value="correlacionar_dados_fiscais">Cruzar dados fiscais</option></select></label>
+<label>Ferramenta <select id="tool"><option value="validar_chave_nfe">Validar chave NF-e/NFC-e</option><option value="consultar_cfop">Consultar CFOP</option><option value="validar_cst">Consultar CST/CSOSN</option><option value="consultar_cest">Consultar CEST</option><option value="correlacionar_dados_fiscais">Cruzar dados fiscais</option><option value="consultar_aliquota_icms">Consultar referência de ICMS por origem e destino</option></select></label>
+<div id="icms-campos" hidden>
+<label>UF de origem <select id="icms-origem"></select></label>
+<label>UF de destino <select id="icms-destino"></select></label>
+<label>Ano da operação <input id="icms-ano" value="2026" maxlength="4" inputmode="numeric"></label>
+<label>Origem da mercadoria <select id="icms-mercadoria"><option value="nao_informada">Não informada</option><option value="nacional">Nacional</option><option value="importada">Importada</option></select></label>
+</div>
 <label><span id="campo">Chave com 44 dígitos</span> <input id="codigo" type="text" maxlength="80" required></label>
 <label id="cest-modo-label" hidden>Pesquisar CEST por <select id="cest-modo"><option value="descricao">Descrição do produto</option><option value="ncm">NCM</option><option value="cest">Código CEST</option></select></label>
 <label id="tributo-label" hidden>Tributo <select id="tributo"><option>ICMS</option><option>CSOSN</option><option>IPI</option><option>PIS</option><option>COFINS</option></select></label>
@@ -37,4 +44,3 @@ O CEST também pode ser pesquisado por descrição ou NCM, com candidatos e cond
 <script type="module" src="/app.js"></script>
 <style>[hidden]{display:none!important}</style>
 </html>
-
