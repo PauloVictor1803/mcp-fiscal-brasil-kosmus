@@ -1,5 +1,6 @@
 // Transporte inspirado no MCP Fiscal Brasil (MIT). Dados reconstruídos em fontes oficiais.
 import bundledData from '../data/tabelas.json' with { type: 'json' };
+import { consultarAliquotaICMS, icmsUFs } from './icms.js';
 let data = bundledData;
 let nextCheck = 0;
 let etag;
@@ -40,6 +41,13 @@ const code = (description, pattern) => ({ type: 'string', description, pattern, 
 const annotations = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false };
 
 const declaredTools = [
+  { name: 'consultar_aliquota_icms', description: 'Consulta referência geral de ICMS por UF de origem e destino na tabela manual TaxGroup/ATS 2026. Interna pode incluir FCP. Não define base, importados, DIFAL ou enquadramento; confirme com a contabilidade.',
+    inputSchema: schema({
+      uf_origem: { type: 'string', enum: icmsUFs, description: 'UF do emitente, obtida do cadastro disponível.' },
+      uf_destino: { type: 'string', enum: icmsUFs, description: 'UF do destinatário desta operação.' },
+      ano: { type: 'string', pattern: '^[0-9]{4}$', description: 'Ano da operação; padrão: ano corrente. Não usa tabela de outro ano.' },
+      origem_mercadoria: { type: 'string', enum: ['nacional', 'importada', 'nao_informada'] },
+    }, ['uf_origem', 'uf_destino']), annotations },
   { name: 'consultar_cfop', description: 'Consulta a descrição de um CFOP informado; não escolhe o enquadramento.',
     inputSchema: schema({ cfop: code('Código de 4 dígitos; aceita 5.102.', '^\\s*[123567]\\.?[0-9]{3}\\s*$') }, ['cfop']), annotations },
   { name: 'validar_chave_nfe', description: 'Confere formato e dígito da chave NF-e/NFC-e; não consulta autorização.',
@@ -69,7 +77,7 @@ const declaredTools = [
 
 // Falha fechada: revisão técnica do transporte não aprova conteúdo fiscal.
 // Não anuncia tabelas reprovadas ao agente, para evitar chamadas inúteis.
-export const tools = declaredTools.filter(tool => tool.name === 'validar_chave_nfe'
+export const tools = declaredTools.filter(tool => ['validar_chave_nfe', 'consultar_aliquota_icms'].includes(tool.name)
   || data.metadata.validacao === 'aprovada');
 
 export function validateArguments(tool, args) {
@@ -243,6 +251,7 @@ export function callTool(name, args) {
   const tool = tools.find(t => t.name === name);
   if (!tool) throw new Error('Ferramenta desconhecida.');
   validateArguments(tool, args);
+  if (name === 'consultar_aliquota_icms') return consultarAliquotaICMS(args);
   if (name === 'validar_chave_nfe') return validateKey(args.chave);
   if (name === 'correlacionar_dados_fiscais') return correlate(args);
   if (name === 'consultar_cest') {
@@ -281,4 +290,3 @@ export function callTool(name, args) {
 }
 
 export const tableMetadata = data.metadata;
-

@@ -1,0 +1,17 @@
+{
+  "ano_referencia": 2026,
+  "registrado_em": "2026-10-26",
+  "atualizacao": "manual",
+  "fonte": "Imagem TaxGroup fornecida pelo usuário",
+  "url_fonte": "https://www.taxgroup.com.br/intelligence/tabela-icms-2026-fique-por-dentro-das-aliquotas-estaduais-atualizadas/",
+  "unidade": "percentual em pontos: 19 significa 19%",
+  "criterio": "Transcrição da matriz fornecida; não constitui auditoria de vigência das 27 legislações.",
+  "observacoes": [
+    "Linha = origem; coluna = destino; diagonal = referência interna mostrada na imagem.",
+    "Os percentuais da imagem podem incluir adicional de fundo estadual; não foram separados em ICMS e FCP.",
+    "Não contempla a regra específica de 4% para importados nem exceções por produto, regime ou operação.",
+    "Não define CST, CSOSN, base de cálculo, benefício fiscal ou DIFAL.",
+    "Ano de referência não comprova vigência durante todo o ano. Revisar quando houver alteração conhecida.",
+    "Tabela local preparada para integração futura; não conectada à Tina."
+  ]
+}
